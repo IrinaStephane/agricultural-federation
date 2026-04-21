@@ -1,4 +1,4 @@
-package school.hei.federationagricole.entity;
+package school.hei.federationagricole.controller.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,10 +11,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Collectivity {
-    private String id;
+public class CreateCollectivity {
     private String location;
-    private CollectivityStructure structure;
-    private List<Member> members;
+    private List<String> members;
     private boolean federationApproval;
+    private CreateCollectivityStructure structure;
 }

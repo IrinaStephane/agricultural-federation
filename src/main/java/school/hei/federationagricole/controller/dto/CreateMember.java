@@ -1,10 +1,11 @@
-package school.hei.federationagricole.entity;
+package school.hei.federationagricole.controller.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import school.hei.federationagricole.entity.MemberInformation;
 
 import java.util.List;
 
@@ -13,9 +14,9 @@ import java.util.List;
 @NoArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class Member extends MemberInformation {
-    private MemberIdentifier id;
-    private List<Member> referees;
+public class CreateMember extends MemberInformation {
+    private String collectivityIdentifier;
+    private List<String> referees;
     private boolean registrationFeePaid;
     private boolean membershipDuesPaid;
 }

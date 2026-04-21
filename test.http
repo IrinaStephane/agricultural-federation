@@ -1,0 +1,38 @@
+### Create Members
+POST http://localhost:8080/members
+Content-Type: application/json
+
+[
+  {
+    "firstName": "Tahiana",
+    "lastName": "Andrianina",
+    "birthDate": "1995-06-12",
+    "gender": "MALE",
+    "address": "Lot IV, Ambohimanarina",
+    "profession": "Informaticien",
+    "phoneNumber": "0340011223",
+    "email": "tahiana@email.com",
+    "occupation": "JUNIOR",
+    "registrationFeePaid": true,
+    "membershipDuesPaid": true,
+    "referees": ["member_001", "member_002"]
+  }
+]
+
+### Create Collectivity
+POST http://localhost:8080/collectivities
+Content-Type: application/json
+
+[
+  {
+    "location": "Antananarivo-Avaradrano",
+    "members": ["member_001", "member_002", "member_003"],
+    "federationApproval": true,
+    "structure": {
+      "president": "member_001",
+      "vicePresident": "member_002",
+      "treasurer": "member_003",
+      "secretary": "member_004"
+    }
+  }
+]
