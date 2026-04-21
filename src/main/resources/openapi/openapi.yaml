@@ -399,7 +399,7 @@ paths:
               properties:
                 reason:
                   type: string
-                  enum: [resignation, collective_transfer, exclusion]
+                  enum: [RESIGNATION, COLLECTIVE_TRANSFER, EXCLUSION]
                   description: Reason for departure
                 departure_date:
                   type: string
@@ -1590,12 +1590,12 @@ components:
     Position:
       type: string
       enum:
-        - president
-        - deputy_president
-        - treasurer
-        - secretary
-        - confirmed_member
-        - junior_member
+        - PRESIDENT
+        - DEPUTY_PRESIDENT
+        - TREASURER
+        - SECRETARY
+        - CONFIRMED_MEMBER
+        - JUNIOR_MEMBER
       description: |
         Position of a member within a collective.
         - `president`, `deputy_president`, `treasurer`, `secretary` are unique per mandate (one member each)
@@ -1603,15 +1603,15 @@ components:
 
     Gender:
       type: string
-      enum: [male, female]
+      enum: [MALE, FEMALE]
 
     PaymentMethod:
       type: string
-      enum: [cash, bank_transfer, mobile_money]
+      enum: [CASH, BANK_TRANSFER, MOBILE_MONEY]
 
     AccountType:
       type: string
-      enum: [cash_register, bank, mobile_money]
+      enum: [CASH_REGISTER, BANK, MOBILE_MONEY]
 
     BankName:
       type: string
@@ -1619,18 +1619,18 @@ components:
 
     MobileMoneyService:
       type: string
-      enum: [Orange_Money, Mvola, Airtel_Money]
+      enum: [ORANGE_MONEY, MVOLA, AIRTEL_MONEY]
 
     ContributionType:
       type: string
-      enum: [monthly, annual, one_time]
+      enum: [MONTHLY, ANNUAL, ONE_TIME]
       description: |
         - `monthly` / `annual` : periodic contributions — a percentage is automatically forwarded to the federation
         - `one_time` : for a specific or unplanned event
 
     ActivityType:
       type: string
-      enum: [general_assembly, junior_training, special]
+      enum: [GENERAL_ASSEMBLY, JUNIOR_TRAINING, SPECIAL]
       description: |
         - `general_assembly` : monthly, mandatory for all members, date set annually on a fixed day
         - `junior_training` : mandatory for junior members only, date set annually on a fixed day
@@ -1638,16 +1638,16 @@ components:
 
     AttendanceStatus:
       type: string
-      enum: [present, absent, excused]
+      enum: [PRESENT, ABSENT, EXCUSED]
 
     AttendanceTarget:
       type: string
-      enum: [all, junior_members, confirmed_members, specific_positions]
+      enum: [JUNIOR, SENIOR, SECRETARY, TREASURER, VICE_PRESIDENT, PRESIDENT]
       description: Defines which members are required to attend a given activity
 
     AuthorizationStatus:
       type: string
-      enum: [pending, granted, denied]
+      enum: [PENDING, GRANTED, DENIED]
 
     # ---- COLLECTIVE ----
 
@@ -1834,14 +1834,14 @@ components:
           format: email
         membership_fee_payment_method:
           type: string
-          enum: [bank_transfer, mobile_money]
+          enum: [BANK_TRANSFER, MOBILE_MONEY]
           description: "Payment method for the 50,000 MGA membership fee (cash not accepted)"
         membership_fee_payment_reference:
           type: string
           description: Transaction reference for the membership fee payment
         annual_contributions_payment_method:
           type: string
-          enum: [bank_transfer, mobile_money]
+          enum: [BANK_TRANSFER, MOBILE_MONEY]
           description: "Payment method for the mandatory annual contributions imposed by the collective"
         annual_contributions_payment_reference:
           type: string
@@ -2047,7 +2047,7 @@ components:
       properties:
         account_detail_type:
           type: string
-          enum: [bank]
+          enum: [BANK]
         account_holder:
           type: string
           description: Name of the account holder
@@ -2066,7 +2066,7 @@ components:
       properties:
         account_detail_type:
           type: string
-          enum: [mobile_money]
+          enum: [MOBILE_MONEY]
         account_holder:
           type: string
           description: Name of the phone number holder
@@ -2082,7 +2082,7 @@ components:
       properties:
         account_detail_type:
           type: string
-          enum: [cash_register]
+          enum: [CASH_REGISTER]
 
     AccountCreate:
       type: object
