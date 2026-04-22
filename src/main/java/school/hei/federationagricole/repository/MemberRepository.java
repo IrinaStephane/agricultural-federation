@@ -111,14 +111,14 @@ public class MemberRepository {
             first_name, last_name, birth_date, enrolment_date,
             address, email, phone_number, profession, gender
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::gender)
     """;
 
         String insertMcSql = """
         INSERT INTO member_collectivity(
             id_member, id_collectivity, occupation, start_date, end_date
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?::collectivity_occupation, ?, ?)
     """;
 
         String insertRefSql = """
@@ -134,7 +134,7 @@ public class MemberRepository {
             List<Member> result = new ArrayList<>();
 
             try (
-                    PreparedStatement memberStmt = connection.prepareStatement(insertMemberSql, Statement.RETURN_GENERATED_KEYS);
+                    PreparedStatement memberStmt = connection.prepareStatement(insertMemberSql, new String[]{"id"});
                     PreparedStatement mcStmt = connection.prepareStatement(insertMcSql);
                     PreparedStatement refStmt = connection.prepareStatement(insertRefSql)
             ) {
@@ -166,7 +166,7 @@ public class MemberRepository {
                     // ---------------- MEMBER_COLLECTIVITY ----------------
                     mcStmt.setInt(1, memberId);
                     mcStmt.setInt(2, dto.getCollectivityIdentifier());
-                    mcStmt.setString(3, dto.getOccupation().name());
+                    mcStmt.setString(3, "JUNIOR");
                     mcStmt.setTimestamp(4, Timestamp.from(Instant.now()));
                     mcStmt.setTimestamp(5, null);
 
@@ -196,7 +196,7 @@ public class MemberRepository {
 
             } catch (Exception e) {
                 connection.rollback();
-                throw new RuntimeException("Save members failed", e);
+                throw new RuntimeException("Save members failed: " + (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
             } finally {
                 connection.setAutoCommit(true);
             }
