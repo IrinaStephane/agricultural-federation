@@ -2,6 +2,7 @@ package school.hei.federationagricole.validator;
 
 import org.springframework.stereotype.Component;
 import school.hei.federationagricole.entity.Member;
+import school.hei.federationagricole.exception.SponsorTenureException;
 
 @Component
 public class SponsorTenureValidator {

@@ -3,6 +3,10 @@ package school.hei.federationagricole.repository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 import school.hei.federationagricole.entity.Federation;
+import school.hei.federationagricole.entity.Member;
+import school.hei.federationagricole.entity.Structure;
+import school.hei.federationagricole.entity.enums.FederationOccupation;
+import school.hei.federationagricole.entity.enums.Gender;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
