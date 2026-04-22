@@ -1,73 +1,72 @@
 package school.hei.federationagricole.service;
 
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import school.hei.federationagricole.controller.dto.CreateCollectivity;
-import school.hei.federationagricole.controller.dto.CreateCollectivityStructure;
 import school.hei.federationagricole.entity.Collectivity;
-import school.hei.federationagricole.entity.Member;
+import school.hei.federationagricole.entity.dto.CollectivityResponse;
+import school.hei.federationagricole.entity.dto.CreateCollectivity;
+import school.hei.federationagricole.exception.BadRequestException;
 import school.hei.federationagricole.repository.CollectivityRepository;
-import school.hei.federationagricole.repository.MemberRepository;
+import school.hei.federationagricole.validator.CollectivityValidator;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import java.time.Instant;
+
 @Service
+@AllArgsConstructor
 public class CollectivityService {
-    private final CollectivityRepository collectivityRepository;
-    private final MemberRepository memberRepository;
+    private final CollectivityRepository repository;
+    private final CollectivityValidator validator;
 
-    public CollectivityService(CollectivityRepository collectivityRepository, MemberRepository memberRepository) {
-        this.collectivityRepository = collectivityRepository;
-        this.memberRepository = memberRepository;
-    }
+    public List<CollectivityResponse> createCollectivities(List<CreateCollectivity> createCollectivities) throws BadRequestException {
+        List<Collectivity> collectivitiesToSave = new ArrayList<>();
+        List<List<Integer>> memberIdsList = new ArrayList<>();
+        List<Integer> presidentIds = new ArrayList<>();
+        List<Integer> vicePresidentIds = new ArrayList<>();
+        List<Integer> treasurerIds = new ArrayList<>();
+        List<Integer> secretaryIds = new ArrayList<>();
 
-    public List<Collectivity> createCollectivities(List<CreateCollectivity> createCollectivities) {
-        List<Collectivity> createdCollectivities = new ArrayList<>();
-        for (CreateCollectivity dto : createCollectivities) {
-            validateCollectivity(dto);
-            
-            // Map members
-            List<Member> members = memberRepository.findAllById(dto.getMembers());
-            
+        for (CreateCollectivity request : createCollectivities) {
+            validator.validateCollectivityCreation(request);
+
             Collectivity collectivity = Collectivity.builder()
-                    .location(dto.getLocation())
-                    .federationApproval(dto.isFederationApproval())
-                    .members(members)
+                    .speciality("Agriculture")
+                    .federationApproval(request.isFederationApproval())
+                    .authorizationDate(Instant.now())
+                    .location(request.getLocation())
                     .build();
 
-            Collectivity saved = collectivityRepository.save(collectivity, dto.getStructure());
-            createdCollectivities.add(saved);
+            collectivitiesToSave.add(collectivity);
+            memberIdsList.add(request.getMemberIds());
+            presidentIds.add(request.getStructure().getPresidentId());
+            vicePresidentIds.add(request.getStructure().getVicePresidentId());
+            treasurerIds.add(request.getStructure().getTreasurerId());
+            secretaryIds.add(request.getStructure().getSecretaryId());
         }
-        return createdCollectivities;
+
+        List<Collectivity> savedCollectivities = repository.saveAll(
+                collectivitiesToSave,
+                memberIdsList,
+                presidentIds,
+                vicePresidentIds,
+                treasurerIds,
+                secretaryIds
+        );
+
+        return savedCollectivities.stream()
+                .map(this::buildResponse)
+                .toList();
     }
 
-    private void validateCollectivity(CreateCollectivity dto) {
-        if (!dto.isFederationApproval()) {
-            throw new IllegalArgumentException("Collectivity without federation approval.");
-        }
-        if (dto.getStructure() == null || isStructureIncomplete(dto.getStructure())) {
-            throw new IllegalArgumentException("Structure missing or incomplete.");
-        }
-        
-        // Check if all members exist
-        for (String memberId : dto.getMembers()) {
-            if (memberRepository.findById(memberId).isEmpty()) {
-                throw new RuntimeException("Member not found: " + memberId);
-            }
-        }
-        
-        // Check structure members
-        CreateCollectivityStructure s = dto.getStructure();
-        String[] ids = {s.getPresident(), s.getVicePresident(), s.getTreasurer(), s.getSecretary()};
-        for (String id : ids) {
-            if (memberRepository.findById(id).isEmpty()) {
-                throw new RuntimeException("Structure member not found: " + id);
-            }
-        }
+    private CollectivityResponse buildResponse(Collectivity collectivity) {
+        return CollectivityResponse.builder()
+                .id(String.valueOf(collectivity.getId()))
+                .location(collectivity.getLocation())
+                .structure(collectivity.getStructure())
+                .members(collectivity.getMembers())
+                .build();
     }
 
-    private boolean isStructureIncomplete(CreateCollectivityStructure structure) {
-        return structure.getPresident() == null || structure.getVicePresident() == null ||
-                structure.getTreasurer() == null || structure.getSecretary() == null;
-    }
 }
