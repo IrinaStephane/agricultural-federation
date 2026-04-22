@@ -389,3 +389,63 @@ Content-Type: application/json
 ]
 
 ###
+
+
+### =========================
+### 3. CREATE MEMBERSHIP FEES
+### =========================
+POST {{baseUrl}}/collectivities/1/membershipFees
+Content-Type: application/json
+
+[
+  {
+    "label": "Cotisation mensuelle",
+    "frequency": "MONTHLY",
+    "amount": 10000,
+    "eligibleFrom": "2026-01-01"
+  },
+  {
+    "label": "Cotisation annuelle",
+    "frequency": "ANNUALLY",
+    "amount": 100000,
+    "eligibleFrom": "2026-01-01"
+  }
+]
+
+### =========================
+### 4. GET MEMBERSHIP FEES
+### =========================
+GET {{baseUrl}}/collectivities/1/membershipFees
+
+### =========================
+### 5. GET TRANSACTIONS
+### =========================
+GET {{baseUrl}}/collectivities/1/transactions?from=2025-01-01&to=2026-12-31
+
+### =========================
+### 6. CREATE MEMBER PAYMENT
+### =========================
+POST {{baseUrl}}/members/1/payments
+Content-Type: application/json
+
+[
+  {
+    "amount": 10000,
+    "membershipFeeIdentifier": 1,
+    "accountCreditedIdentifier": 1,
+    "paymentMode": "CASH"
+  }
+]
+
+### =========================
+### 7. TEST ERROR - BAD DATE
+### =========================
+GET {{baseUrl}}/collectivities/1/transactions?from=2026-12-31&to=2025-01-01
+
+### =========================
+### 8. TEST ERROR - BAD BODY
+### =========================
+POST {{baseUrl}}/collectivities/1/membershipFees
+Content-Type: application/json
+
+[]

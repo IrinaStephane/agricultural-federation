@@ -19,7 +19,7 @@ CREATE TYPE "gender" AS ENUM ('MALE', 'FEMALE');
 
 CREATE TYPE "cotisation_frequency" AS ENUM ('MONTHLY', 'ANNUAL', 'PUNCTUAL');
 
-CREATE TYPE "payment_mode" AS ENUM ('CASH', 'BANK_TRANSFER', 'MOBILE_MONEY');
+CREATE TYPE "payment_mode" AS ENUM ('CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'MOBILE_BANKING'');
 
 CREATE TYPE "bank_name" AS ENUM
     ('BRED', 'MCB', 'BMOI', 'BOA', 'BGFI', 'AFG', 'ACCES_BANQUE', 'BAOBAB', 'SIPEM');
@@ -72,11 +72,11 @@ CREATE TABLE "public"."collectivity"
     "id"                  serial    NOT NULL,
     -- Nullable on creation; set once by the federation (Feature J).
     -- UNIQUE ensures no two collectivities share the same number or name.
-    "number"              varchar            UNIQUE,
-    "name"                varchar            UNIQUE,
+    "number"              varchar UNIQUE,
+    "name"                varchar UNIQUE,
     "speciality"          varchar,
     "creation_datetime"   timestamp NOT NULL,
-    "federation_approval" boolean            DEFAULT FALSE,
+    "federation_approval" boolean DEFAULT FALSE,
     "authorization_date"  timestamp,
     "id_federation"       int       NOT NULL,
     "location"            varchar   NOT NULL,
@@ -104,7 +104,7 @@ CREATE TABLE "public"."member_referee"
     "id_candidate"    int       NOT NULL,
     "id_referee"      int       NOT NULL,
     "id_collectivity" int       NOT NULL,
-    "relationship"    varchar   NOT NULL,   -- famille, amis, collègues…
+    "relationship"    varchar   NOT NULL, -- famille, amis, collègues…
     "created_at"      timestamp NOT NULL DEFAULT NOW(),
     PRIMARY KEY ("id"),
     UNIQUE ("id_candidate", "id_referee")
@@ -147,7 +147,7 @@ CREATE TABLE "public"."account"
     PRIMARY KEY ("id"),
     CONSTRAINT "chk_account_owner" CHECK (
         ("id_collectivity" IS NOT NULL AND "id_federation" IS NULL) OR
-        ("id_collectivity" IS NULL  AND "id_federation" IS NOT NULL)
+        ("id_collectivity" IS NULL AND "id_federation" IS NOT NULL)
         )
 );
 
@@ -199,7 +199,7 @@ CREATE TABLE "public"."transaction"
     "transaction_type"   transaction_type NOT NULL DEFAULT 'IN',
     "amount"             numeric(15, 2)   NOT NULL,
     "transaction_date"   timestamp        NOT NULL DEFAULT NOW(),
-    "payment_mode"       payment_mode,   -- null for OUT transactions
+    "payment_mode"       payment_mode, -- null for OUT transactions
     "description"        text,
     PRIMARY KEY ("id")
 );
