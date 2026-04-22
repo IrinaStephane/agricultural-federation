@@ -121,8 +121,6 @@ public class CollectivityRepository {
     }
 
     public Collectivity assignIdentification(Integer id, String number, String name) {
-        // The WHERE clause guards against the race condition:
-        // it only updates rows where BOTH fields are still null.
         String sql = """
             UPDATE collectivity
                SET number = ?,
@@ -142,9 +140,6 @@ public class CollectivityRepository {
 
                 int rowsUpdated = stmt.executeUpdate();
                 if (rowsUpdated == 0) {
-                    // Either the row doesn't exist or number/name are already set.
-                    // The controller already checked existence and immutability,
-                    // so this is a safety net for the race-condition scenario.
                     connection.rollback();
                     throw new RuntimeException(
                             "Could not assign identification: collectivity not found or already identified.");

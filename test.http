@@ -1,16 +1,4 @@
-### ============================================================
-### Agricultural Federation API - Tests HTTP
-### Base URL : adapter selon votre environnement
-### ============================================================
-
 @baseUrl = http://localhost:8080
-
-### ============================================================
-### PUT /collectivities/{id}  — Fonctionnalité J
-### Attribution d'un numéro et d'un nom à la collectivité 1
-### (collectivité 1 a number=NULL et name=NULL dans data.sql)
-### Résultat attendu : 200 OK avec la collectivité complète
-### ============================================================
 
 PUT {{baseUrl}}/collectivities/1
 Content-Type: application/json
@@ -22,12 +10,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### PUT /collectivities/{id} — Erreur : déjà identifiée
-### La collectivité 2 a déjà number=COL-002 et name=Collectivite Antsirabe
-### Résultat attendu : 409 Conflict
-### ============================================================
-
 PUT {{baseUrl}}/collectivities/2
 Content-Type: application/json
 
@@ -37,13 +19,6 @@ Content-Type: application/json
 }
 
 ###
-
-### ============================================================
-### PUT /collectivities/{id} — Erreur : nom déjà pris
-### Après avoir assigné COL-001 à la collectivité 1,
-### tenter d'assigner le même nom à une autre collectivité
-### Résultat attendu : 400 Bad Request
-### ============================================================
 
 PUT {{baseUrl}}/collectivities/1
 Content-Type: application/json
@@ -55,11 +30,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### PUT /collectivities/{id} — Erreur : collectivité inexistante
-### Résultat attendu : 404 Not Found
-### ============================================================
-
 PUT {{baseUrl}}/collectivities/999
 Content-Type: application/json
 
@@ -69,18 +39,6 @@ Content-Type: application/json
 }
 
 ###
-
-### ============================================================
-### POST /members — Fonctionnalité B
-### Admission du membre 11 (Aina Rabeson) dans la collectivité 1
-###
-### Conditions :
-###   - 2 parrains confirmés (membres 1 et 2, ancienneté > 90j ✓)
-###   - Au moins autant de parrains de la collectivité cible (1 et 2 sont dans coll.1 ✓)
-###   - registrationFeePaid: true
-###   - membershipDuesPaid: true
-### Résultat attendu : 201 Created
-### ============================================================
 
 POST {{baseUrl}}/members
 Content-Type: application/json
@@ -104,14 +62,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### POST /members — Admission du membre 12 (Niry Rakotondrabe)
-### dans la collectivité 1
-###
-### Parrains : membre 9 (coll.1) et membre 5 (coll.2)
-###   - 1 parrain dans coll.1, 1 parrain hors coll.1 → inTargetCollectivity >= inOther ✓
-### Résultat attendu : 201 Created
-### ============================================================
 
 POST {{baseUrl}}/members
 Content-Type: application/json
@@ -134,11 +84,6 @@ Content-Type: application/json
 ]
 
 ###
-
-### ============================================================
-### POST /members — Admission de plusieurs membres en une seule requête
-### Résultat attendu : 201 Created avec les 2 membres
-### ============================================================
 
 POST {{baseUrl}}/members
 Content-Type: application/json
@@ -176,11 +121,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### POST /members — Erreur : paiement incomplet
-### registrationFeePaid: false → doit rejeter
-### Résultat attendu : 400 Bad Request
-### ============================================================
 
 POST {{baseUrl}}/members
 Content-Type: application/json
@@ -204,11 +144,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### POST /members — Erreur : cotisation annuelle non payée
-### membershipDuesPaid: false → doit rejeter
-### Résultat attendu : 400 Bad Request
-### ============================================================
 
 POST {{baseUrl}}/members
 Content-Type: application/json
@@ -232,10 +167,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### POST /members — Erreur : moins de 2 parrains
-### Résultat attendu : 400 Bad Request
-### ============================================================
 
 POST {{baseUrl}}/members
 Content-Type: application/json
@@ -259,12 +190,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### POST /members — Erreur : parrains tous hors collectivité cible
-### 2 parrains de la collectivité 2 seulement → inTargetCollectivity(0) < inOther(2)
-### Résultat attendu : 400 Bad Request
-### ============================================================
-
 POST {{baseUrl}}/members
 Content-Type: application/json
 
@@ -287,18 +212,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### POST /collectivities — Fonctionnalité A
-### Création d'une nouvelle collectivité valide
-###
-### Conditions :
-###   - federationApproval: true
-###   - 10 membres dont au minimum 5 avec ancienneté > 6 mois
-###   - structure complète (président, VP, trésorier, secrétaire)
-###   - Les membres 1-10 existent et ont l'ancienneté requise
-### Résultat attendu : 201 Created
-### ============================================================
-
 POST {{baseUrl}}/collectivities
 Content-Type: application/json
 
@@ -318,10 +231,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### POST /collectivities — Erreur : pas d'approbation fédération
-### Résultat attendu : 400 Bad Request
-### ============================================================
 
 POST {{baseUrl}}/collectivities
 Content-Type: application/json
@@ -342,11 +251,6 @@ Content-Type: application/json
 
 ###
 
-### ============================================================
-### POST /collectivities — Erreur : moins de 10 membres
-### Résultat attendu : 400 Bad Request
-### ============================================================
-
 POST {{baseUrl}}/collectivities
 Content-Type: application/json
 
@@ -365,11 +269,6 @@ Content-Type: application/json
 ]
 
 ###
-
-### ============================================================
-### POST /collectivities — Erreur : membre inexistant dans la structure
-### Résultat attendu : 404 Not Found
-### ============================================================
 
 POST {{baseUrl}}/collectivities
 Content-Type: application/json

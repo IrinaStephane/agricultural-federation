@@ -1,14 +1,3 @@
--- =============================================================================
--- schema.sql  –  Agricultural Federation  (v0.0.2 / Feature J)
--- =============================================================================
--- Changes vs schemav0.0.1:
---   • collectivity.number  : NOT NULL constraint removed (nullable until assigned)
---   • collectivity.name    : NOT NULL constraint removed (nullable until assigned)
---   • Both keep their UNIQUE constraint so the DB is the final uniqueness guard
--- =============================================================================
-
--- ─── Enum types ──────────────────────────────────────────────────────────────
-
 CREATE TYPE "collectivity_occupation" AS ENUM
     ('PRESIDENT', 'VICE_PRESIDENT', 'TREASURER', 'SECRETARY', 'SENIOR', 'JUNIOR');
 
@@ -29,7 +18,6 @@ CREATE TYPE "mobile_money_service" AS ENUM
 
 CREATE TYPE "transaction_type" AS ENUM ('IN', 'OUT');
 
--- ─── Core tables ─────────────────────────────────────────────────────────────
 
 CREATE TABLE "public"."member"
 (
@@ -46,7 +34,6 @@ CREATE TABLE "public"."member"
     PRIMARY KEY ("id")
 );
 
--- Retained for future use (city-level grouping)
 CREATE TABLE "public"."location"
 (
     "id"   serial  NOT NULL,
@@ -61,17 +48,10 @@ CREATE TABLE "public"."federation"
     PRIMARY KEY ("id")
 );
 
--- ─── Collectivity ─────────────────────────────────────────────────────────────
--- number and name are nullable on creation.
--- The federation assigns them later via PUT /collectivities/{id} (Feature J).
--- Once assigned they MUST stay unique across the whole system → UNIQUE index.
--- The application layer also enforces immutability (no re-assignment allowed).
 
 CREATE TABLE "public"."collectivity"
 (
     "id"                  serial    NOT NULL,
-    -- Nullable on creation; set once by the federation (Feature J).
-    -- UNIQUE ensures no two collectivities share the same number or name.
     "number"              varchar            UNIQUE,
     "name"                varchar            UNIQUE,
     "speciality"          varchar,
@@ -83,7 +63,6 @@ CREATE TABLE "public"."collectivity"
     PRIMARY KEY ("id")
 );
 
--- ─── Member ↔ Collectivity ───────────────────────────────────────────────────
 
 CREATE TABLE "public"."member_collectivity"
 (
@@ -96,7 +75,6 @@ CREATE TABLE "public"."member_collectivity"
     PRIMARY KEY ("id")
 );
 
--- ─── Sponsorship (parrainage) ────────────────────────────────────────────────
 
 CREATE TABLE "public"."member_referee"
 (
@@ -104,13 +82,12 @@ CREATE TABLE "public"."member_referee"
     "id_candidate"    int       NOT NULL,
     "id_referee"      int       NOT NULL,
     "id_collectivity" int       NOT NULL,
-    "relationship"    varchar   NOT NULL,   -- famille, amis, collègues…
+    "relationship"    varchar   NOT NULL,
     "created_at"      timestamp NOT NULL DEFAULT NOW(),
     PRIMARY KEY ("id"),
     UNIQUE ("id_candidate", "id_referee")
 );
 
--- ─── Federation mandate ───────────────────────────────────────────────────────
 
 CREATE TABLE "public"."mandate_federation"
 (
@@ -123,8 +100,6 @@ CREATE TABLE "public"."mandate_federation"
     PRIMARY KEY ("id")
 );
 
--- ─── Cotisation plan ─────────────────────────────────────────────────────────
-
 CREATE TABLE "public"."cotisation_plan"
 (
     "id"              serial               NOT NULL,
@@ -136,8 +111,6 @@ CREATE TABLE "public"."cotisation_plan"
     "is_active"       boolean              NOT NULL DEFAULT true,
     PRIMARY KEY ("id")
 );
-
--- ─── Accounts ────────────────────────────────────────────────────────────────
 
 CREATE TABLE "public"."account"
 (
@@ -187,24 +160,20 @@ CREATE TABLE "public"."mobile_money_account"
         FOREIGN KEY ("id_account") REFERENCES "public"."account" ("id") ON DELETE CASCADE
 );
 
--- ─── Transactions ─────────────────────────────────────────────────────────────
-
 CREATE TABLE "public"."transaction"
 (
     "id"                 serial           NOT NULL,
     "id_member"          int              NOT NULL,
     "id_collectivity"    int              NOT NULL,
-    "id_cotisation_plan" int,          -- null = frais d'adhésion ou cotisation ponctuelle
+    "id_cotisation_plan" int,
     "id_account"         int              NOT NULL,
     "transaction_type"   transaction_type NOT NULL DEFAULT 'IN',
     "amount"             numeric(15, 2)   NOT NULL,
     "transaction_date"   timestamp        NOT NULL DEFAULT NOW(),
-    "payment_mode"       payment_mode,   -- null for OUT transactions
+    "payment_mode"       payment_mode,
     "description"        text,
     PRIMARY KEY ("id")
 );
-
--- ─── Foreign keys ─────────────────────────────────────────────────────────────
 
 ALTER TABLE "public"."collectivity"
     ADD CONSTRAINT "fk_collectivity_federation"
