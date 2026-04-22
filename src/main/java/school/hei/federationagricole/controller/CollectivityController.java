@@ -1,11 +1,10 @@
 package school.hei.federationagricole.controller;
 
 import lombok.AllArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import school.hei.federationagricole.entity.CollectivityTransaction;
-import school.hei.federationagricole.entity.MembershipFee;
 import school.hei.federationagricole.entity.dto.CollectivityIdentificationRequest;
 import school.hei.federationagricole.entity.dto.CollectivityResponse;
 import school.hei.federationagricole.entity.dto.CreateCollectivity;
@@ -25,33 +24,33 @@ import java.util.List;
 @RequestMapping("/collectivities")
 public class CollectivityController {
 
-    private final CollectivityService collectivityService;
-    private final MembershipFeeService membershipFeeService;
-    private final TransactionService transactionService;
+    private final CollectivityService   collectivityService;
+    private final MembershipFeeService  membershipFeeService;
+    private final TransactionService    transactionService;
+
+    // ── POST /collectivities  (Feature A) ────────────────────────────────────
 
     @PostMapping
     public ResponseEntity<?> createCollectivities(
-            @RequestBody(required = false) List<CreateCollectivity> createCollectivities) {
+            @RequestBody(required = false) List<CreateCollectivity> body) {
         try {
-            if (createCollectivities == null || createCollectivities.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Mandatory body not provided");
+            if (body == null || body.isEmpty()) {
+                return ResponseEntity.badRequest().body("Request body must be a non-empty array.");
             }
-
-            List<CollectivityResponse> collectivities =
-                    collectivityService.createCollectivities(createCollectivities);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(collectivities);
-
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(collectivityService.createCollectivities(body));
         } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("Unexpected error: " + e.getMessage());
         }
     }
+
+    // ── PUT /collectivities/{id}/informations  (Feature J / v0.0.2) ──────────
+    // NOTE: v0.0.3 moved this to /collectivities/{id}/informations
 
     @PutMapping("/{id}/informations")
     public ResponseEntity<?> identifyCollectivity(
@@ -59,80 +58,74 @@ public class CollectivityController {
             @RequestBody(required = false) CollectivityIdentificationRequest request) {
         try {
             if (request == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                return ResponseEntity.badRequest()
                         .body("Request body with 'number' and 'name' is required.");
             }
-
             CollectivityResponse response = collectivityService.identifyCollectivity(id, request);
             return ResponseEntity.ok(response);
-
         } catch (CollectivityAlreadyIdentifiedException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("Unexpected error: " + e.getMessage());
         }
     }
+
+    // ── GET /collectivities/{id}/membershipFees  (Feature v0.0.3) ────────────
 
     @GetMapping("/{id}/membershipFees")
     public ResponseEntity<?> getMembershipFees(@PathVariable Integer id) {
         try {
-            List<MembershipFee> fees = membershipFeeService.getByCollectivity(id);
-            return ResponseEntity.ok(fees);
+            return ResponseEntity.ok(membershipFeeService.getByCollectivity(id));
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("Unexpected error: " + e.getMessage());
         }
     }
+
+    // ── POST /collectivities/{id}/membershipFees  (Feature v0.0.3) ───────────
 
     @PostMapping("/{id}/membershipFees")
     public ResponseEntity<?> createMembershipFees(
             @PathVariable Integer id,
-            @RequestBody(required = false) List<CreateMembershipFee> dtos) {
+            @RequestBody(required = false) List<CreateMembershipFee> body) {
         try {
-            if (dtos == null || dtos.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Mandatory body not provided");
+            if (body == null || body.isEmpty()) {
+                return ResponseEntity.badRequest().body("Request body must be a non-empty array.");
             }
-
-            List<MembershipFee> created = membershipFeeService.create(id, dtos);
-            return ResponseEntity.ok(created);
-
+            return ResponseEntity.ok(membershipFeeService.create(id, body));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("Unexpected error: " + e.getMessage());
         }
     }
+
+    // ── GET /collectivities/{id}/transactions  (Feature v0.0.3) ─────────────
 
     @GetMapping("/{id}/transactions")
     public ResponseEntity<?> getTransactions(
             @PathVariable Integer id,
-            @RequestParam LocalDate from,
-            @RequestParam LocalDate to) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         try {
-            List<CollectivityTransaction> transactions =
-                    transactionService.getTransactions(id, from, to);
-            return ResponseEntity.ok(transactions);
-
+            return ResponseEntity.ok(transactionService.getTransactions(id, from, to));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("Unexpected error: " + e.getMessage());
         }
     }
 }

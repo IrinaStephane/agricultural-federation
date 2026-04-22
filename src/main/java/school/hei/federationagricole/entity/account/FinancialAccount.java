@@ -15,9 +15,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = CashAccount.class,          name = "CASH"),
-        @JsonSubTypes.Type(value = BankAccount.class,          name = "BANK"),
-        @JsonSubTypes.Type(value = MobileBankingAccount.class, name = "MOBILE_BANKING")
+    @JsonSubTypes.Type(value = CashAccount.class,          name = "CASH"),
+    @JsonSubTypes.Type(value = BankAccount.class,          name = "BANK"),
+    @JsonSubTypes.Type(value = MobileBankingAccount.class, name = "MOBILE_BANKING")
 })
 public abstract class FinancialAccount {
     private Integer id;

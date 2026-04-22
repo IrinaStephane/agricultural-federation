@@ -2,7 +2,6 @@ package school.hei.federationagricole.entity.enums;
 
 public enum PaymentMode {
     CASH,
-    BANK_TRANSFER,
-    MOBILE_MONEY,
-    MOBILE_BANKING
+    MOBILE_BANKING,
+    BANK_TRANSFER
 }

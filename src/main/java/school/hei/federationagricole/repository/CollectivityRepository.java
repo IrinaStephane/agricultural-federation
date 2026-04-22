@@ -20,22 +20,30 @@ import java.util.Map;
 @Repository
 @AllArgsConstructor
 public class CollectivityRepository {
+
     private final Connection connection;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CREATE (Feature A)
+    // ─────────────────────────────────────────────────────────────────────────
 
     public Collectivity save(Collectivity collectivity, List<Integer> memberIds,
                              Integer presidentId, Integer vicePresidentId,
                              Integer treasurerId, Integer secretaryId) {
+
+        // BUG FIX: cast enum with ::collectivity_occupation
         String insertCollectivitySql = """
-            INSERT INTO collectivity (number, name, speciality, federation_approval,
-                                      authorization_date, location, id_federation, creation_datetime)
-            VALUES (?, ?, ?, ?, ?, ?, 1, now())
+            INSERT INTO collectivity
+                (number, name, speciality, federation_approval,
+                 authorization_date, location, id_federation, creation_datetime)
+            VALUES (?, ?, ?, ?, ?, ?, 1, NOW())
             RETURNING id
-        """;
+            """;
 
         String insertMemberSql = """
             INSERT INTO member_collectivity (id_member, id_collectivity, occupation, start_date)
             VALUES (?, ?, ?::collectivity_occupation, ?)
-        """;
+            """;
 
         try {
             connection.setAutoCommit(false);
@@ -46,26 +54,25 @@ public class CollectivityRepository {
                 stmt.setString(2, collectivity.getName());
                 stmt.setString(3, collectivity.getSpeciality());
                 stmt.setBoolean(4, collectivity.isFederationApproval());
-                stmt.setTimestamp(5, collectivity.getAuthorizationDate() != null
-                        ? Timestamp.from(collectivity.getAuthorizationDate()) : null);
+                if (collectivity.getAuthorizationDate() != null)
+                    stmt.setTimestamp(5, Timestamp.from(collectivity.getAuthorizationDate()));
+                else
+                    stmt.setNull(5, Types.TIMESTAMP);
                 stmt.setString(6, collectivity.getLocation());
 
                 ResultSet rs = stmt.executeQuery();
-                if (rs.next()) {
-                    collectivityId = rs.getInt("id");
-                } else {
-                    throw new SQLException("Failed to insert collectivity, no ID returned.");
-                }
+                if (!rs.next()) throw new SQLException("No ID returned after collectivity insert.");
+                collectivityId = rs.getInt("id");
             }
 
             try (PreparedStatement memberStmt = connection.prepareStatement(insertMemberSql)) {
                 Timestamp now = Timestamp.from(Instant.now());
                 for (Integer memberId : memberIds) {
-                    String occupation = determineOccupation(
-                            memberId, presidentId, vicePresidentId, treasurerId, secretaryId);
+                    String occ = determineOccupation(memberId, presidentId,
+                            vicePresidentId, treasurerId, secretaryId);
                     memberStmt.setInt(1, memberId);
                     memberStmt.setInt(2, collectivityId);
-                    memberStmt.setString(3, occupation);
+                    memberStmt.setString(3, occ);      // cast handled by ::collectivity_occupation in SQL
                     memberStmt.setTimestamp(4, now);
                     memberStmt.addBatch();
                 }
@@ -77,7 +84,7 @@ public class CollectivityRepository {
 
         } catch (SQLException e) {
             rollback();
-            throw new RuntimeException("Failed to save collectivity with members", e);
+            throw new RuntimeException("Failed to save collectivity: " + e.getMessage(), e);
         } finally {
             resetAutoCommit();
         }
@@ -98,118 +105,103 @@ public class CollectivityRepository {
         return saved;
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Feature J : assign number + name
+    // ─────────────────────────────────────────────────────────────────────────
+
     public boolean existsByNumber(String number) {
-        String sql = "SELECT 1 FROM collectivity WHERE number = ? LIMIT 1";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, number);
-            ResultSet rs = stmt.executeQuery();
-            return rs.next();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to check collectivity number uniqueness", e);
-        }
+        return existsBy("number", number);
     }
 
     public boolean existsByName(String name) {
-        String sql = "SELECT 1 FROM collectivity WHERE name = ? LIMIT 1";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, name);
-            ResultSet rs = stmt.executeQuery();
-            return rs.next();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to check collectivity name uniqueness", e);
-        }
+        return existsBy("name", name);
     }
 
     public Collectivity assignIdentification(Integer id, String number, String name) {
-        // The WHERE clause guards against the race condition:
-        // it only updates rows where BOTH fields are still null.
         String sql = """
-            UPDATE collectivity
-               SET number = ?,
-                   name   = ?
-             WHERE id = ?
-               AND number IS NULL
-               AND name   IS NULL
-        """;
-
+            UPDATE collectivity SET number = ?, name = ?
+            WHERE id = ? AND number IS NULL AND name IS NULL
+            """;
         try {
             connection.setAutoCommit(false);
-
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, number);
                 stmt.setString(2, name);
                 stmt.setInt(3, id);
-
-                int rowsUpdated = stmt.executeUpdate();
-                if (rowsUpdated == 0) {
-                    // Either the row doesn't exist or number/name are already set.
-                    // The controller already checked existence and immutability,
-                    // so this is a safety net for the race-condition scenario.
+                if (stmt.executeUpdate() == 0) {
                     connection.rollback();
-                    throw new RuntimeException(
-                            "Could not assign identification: collectivity not found or already identified.");
+                    throw new RuntimeException("Could not assign: not found or already identified.");
                 }
             }
-
             connection.commit();
             return findById(id);
-
         } catch (SQLException e) {
             rollback();
-            throw new RuntimeException("Failed to assign identification to collectivity", e);
+            throw new RuntimeException("Failed to assign identification", e);
         } finally {
             resetAutoCommit();
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // READ
+    // ─────────────────────────────────────────────────────────────────────────
+
     public Collectivity findById(Integer id) {
         String sql = """
             SELECT id, number, name, speciality, creation_datetime,
                    federation_approval, authorization_date, location
-            FROM collectivity
-            WHERE id = ?
-        """;
-
+            FROM collectivity WHERE id = ?
+            """;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
+            if (!rs.next()) return null;
 
-            if (rs.next()) {
-                Collectivity collectivity = Collectivity.builder()
-                        .id(rs.getInt("id"))
-                        .number(rs.getString("number"))
-                        .name(rs.getString("name"))
-                        .speciality(rs.getString("speciality"))
-                        .creationDatetime(rs.getTimestamp("creation_datetime").toInstant())
-                        .federationApproval(rs.getBoolean("federation_approval"))
-                        .authorizationDate(rs.getTimestamp("authorization_date") != null
-                                ? rs.getTimestamp("authorization_date").toInstant() : null)
-                        .location(rs.getString("location"))
-                        .build();
+            Collectivity c = Collectivity.builder()
+                    .id(rs.getInt("id"))
+                    .number(rs.getString("number"))
+                    .name(rs.getString("name"))
+                    .speciality(rs.getString("speciality"))
+                    .creationDatetime(rs.getTimestamp("creation_datetime").toInstant())
+                    .federationApproval(rs.getBoolean("federation_approval"))
+                    .authorizationDate(rs.getTimestamp("authorization_date") != null
+                            ? rs.getTimestamp("authorization_date").toInstant() : null)
+                    .location(rs.getString("location"))
+                    .build();
 
-                fetchMembersAndStructure(collectivity);
-                return collectivity;
-            }
-            return null;
+            fetchMembersAndStructure(c);
+            return c;
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find collectivity", e);
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private boolean existsBy(String column, String value) {
+        String sql = "SELECT 1 FROM collectivity WHERE " + column + " = ? LIMIT 1";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, value);
+            return stmt.executeQuery().next();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to check collectivity uniqueness for " + column, e);
+        }
+    }
+
     private void fetchMembersAndStructure(Collectivity collectivity) {
         String sql = """
-            SELECT
-                m.id, m.first_name, m.last_name, m.birth_date, m.enrolment_date,
-                m.address, m.email, m.phone_number, m.profession, m.gender,
-                mc.occupation
+            SELECT m.id, m.first_name, m.last_name, m.birth_date, m.enrolment_date,
+                   m.address, m.email, m.phone_number, m.profession, m.gender, mc.occupation
             FROM member_collectivity mc
             JOIN member m ON mc.id_member = m.id
-            WHERE mc.id_collectivity = ?
-              AND mc.end_date IS NULL
-        """;
+            WHERE mc.id_collectivity = ? AND mc.end_date IS NULL
+            """;
 
-        List<Member> members   = new ArrayList<>();
-        Structure structure    = Structure.builder().build();
+        List<Member> members = new ArrayList<>();
+        Structure structure  = Structure.builder().build();
         Map<Integer, Member> cache = new HashMap<>();
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -217,39 +209,37 @@ public class CollectivityRepository {
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
+                final ResultSet finalRs = rs;
                 Integer memberId = rs.getInt("id");
-
                 Member member = cache.computeIfAbsent(memberId, mid -> {
                     try {
                         return Member.builder()
                                 .id(mid)
-                                .firstName(rs.getString("first_name"))
-                                .lastName(rs.getString("last_name"))
-                                .birthDate(rs.getDate("birth_date").toLocalDate())
-                                .enrolmentDate(rs.getTimestamp("enrolment_date").toInstant())
-                                .address(rs.getString("address"))
-                                .email(rs.getString("email"))
-                                .phoneNumber(rs.getString("phone_number"))
-                                .profession(rs.getString("profession"))
-                                .gender(Gender.valueOf(rs.getString("gender")))
+                                .firstName(finalRs.getString("first_name"))
+                                .lastName(finalRs.getString("last_name"))
+                                .birthDate(finalRs.getDate("birth_date").toLocalDate())
+                                .enrolmentDate(finalRs.getTimestamp("enrolment_date").toInstant())
+                                .address(finalRs.getString("address"))
+                                .email(finalRs.getString("email"))
+                                .phoneNumber(finalRs.getString("phone_number"))
+                                .profession(finalRs.getString("profession"))
+                                .gender(Gender.valueOf(finalRs.getString("gender")))
                                 .build();
                     } catch (SQLException e) {
-                        throw new RuntimeException("Failed to map member", e);
+                        throw new RuntimeException("Failed to map member row", e);
                     }
                 });
 
                 members.add(member);
 
-                String occ = rs.getString("occupation");
-                switch (CollectivityOccupation.valueOf(occ)) {
+                switch (CollectivityOccupation.valueOf(rs.getString("occupation"))) {
                     case PRESIDENT      -> structure.setPresident(member);
                     case VICE_PRESIDENT -> structure.setVicePresident(member);
                     case TREASURER      -> structure.setTreasurer(member);
                     case SECRETARY      -> structure.setSecretary(member);
-                    default             -> { /* SENIOR / JUNIOR : not in structure */ }
+                    default             -> { /* SENIOR / JUNIOR not in structure */ }
                 }
             }
-
             collectivity.setMembers(members);
             collectivity.setStructure(structure);
 
@@ -261,10 +251,10 @@ public class CollectivityRepository {
     private String determineOccupation(Integer memberId, Integer presidentId,
                                        Integer vicePresidentId, Integer treasurerId,
                                        Integer secretaryId) {
-        if (memberId.equals(presidentId))      return "PRESIDENT";
-        if (memberId.equals(vicePresidentId))  return "VICE_PRESIDENT";
-        if (memberId.equals(treasurerId))      return "TREASURER";
-        if (memberId.equals(secretaryId))      return "SECRETARY";
+        if (memberId.equals(presidentId))     return "PRESIDENT";
+        if (memberId.equals(vicePresidentId)) return "VICE_PRESIDENT";
+        if (memberId.equals(treasurerId))     return "TREASURER";
+        if (memberId.equals(secretaryId))     return "SECRETARY";
         return hasMinimumSeniority(memberId) ? "SENIOR" : "JUNIOR";
     }
 
@@ -274,20 +264,19 @@ public class CollectivityRepository {
             stmt.setInt(1, memberId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                Timestamp enrolmentDate = rs.getTimestamp("enrolment_date");
-                long monthsBetween = ChronoUnit.MONTHS.between(
-                        enrolmentDate.toLocalDateTime(), LocalDateTime.now());
-                return monthsBetween >= 6;
+                long months = ChronoUnit.MONTHS.between(
+                        rs.getTimestamp("enrolment_date").toLocalDateTime(), LocalDateTime.now());
+                return months >= 6;
             }
             return false;
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to check member seniority", e);
+            throw new RuntimeException("Failed to check seniority", e);
         }
     }
 
     private void rollback() {
         try { connection.rollback(); }
-        catch (SQLException ex) { throw new RuntimeException("Failed to rollback transaction", ex); }
+        catch (SQLException ex) { throw new RuntimeException("Rollback failed", ex); }
     }
 
     private void resetAutoCommit() {

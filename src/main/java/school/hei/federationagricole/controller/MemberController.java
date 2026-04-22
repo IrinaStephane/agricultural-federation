@@ -1,17 +1,17 @@
 package school.hei.federationagricole.controller;
 
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import school.hei.federationagricole.entity.dto.CreateMember;
+import school.hei.federationagricole.entity.dto.CreateMemberPayment;
+import school.hei.federationagricole.exception.BadRequestException;
 import school.hei.federationagricole.exception.InsufficientSponsorCount;
 import school.hei.federationagricole.exception.NotFoundException;
 import school.hei.federationagricole.exception.PaymentException;
 import school.hei.federationagricole.service.MemberService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import school.hei.federationagricole.service.PaymentService;
 
 import java.util.List;
 
@@ -20,31 +20,49 @@ import java.util.List;
 @AllArgsConstructor
 public class MemberController {
 
-    private final MemberService service;
+    private final MemberService  memberService;
+    private final PaymentService paymentService;
+
+    // ── POST /members  (Feature B) ────────────────────────────────────────────
 
     @PostMapping
-    public ResponseEntity<?> createMember(@RequestBody List<CreateMember> members) {
+    public ResponseEntity<?> createMembers(
+            @RequestBody(required = false) List<CreateMember> body) {
         try {
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(service.createMembers(members));
+            if (body == null || body.isEmpty()) {
+                return ResponseEntity.badRequest().body("Request body must be a non-empty array.");
+            }
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(memberService.createMembers(body));
+        } catch (PaymentException | InsufficientSponsorCount e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
+        }
+    }
 
-        } catch (PaymentException | InsufficientSponsorCount ex) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ex.getMessage());
+    // ── POST /members/{id}/payments  (Feature v0.0.3) ────────────────────────
 
-        } catch (NotFoundException ex) {
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .body(ex.getMessage());
-
-        } catch (RuntimeException ex) {
-            String detail = ex.getMessage();
-            if (ex.getCause() != null) detail += " | cause: " + ex.getCause().getMessage();
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Internal server error: " + detail);
+    @PostMapping("/{id}/payments")
+    public ResponseEntity<?> createPayments(
+            @PathVariable Integer id,
+            @RequestBody(required = false) List<CreateMemberPayment> body) {
+        try {
+            if (body == null || body.isEmpty()) {
+                return ResponseEntity.badRequest().body("Request body must be a non-empty array.");
+            }
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(paymentService.createPayments(id, body));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
         }
     }
 }

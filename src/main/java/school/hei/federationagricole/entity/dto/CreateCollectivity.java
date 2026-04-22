@@ -1,6 +1,5 @@
 package school.hei.federationagricole.entity.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +13,6 @@ import java.util.List;
 @Builder
 public class CreateCollectivity {
     private String location;
-    @JsonProperty("members")
     private List<Integer> memberIds;
     private boolean federationApproval;
     private CreateStructure structure;
