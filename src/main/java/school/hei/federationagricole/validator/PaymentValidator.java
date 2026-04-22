@@ -2,6 +2,7 @@ package school.hei.federationagricole.validator;
 
 import org.springframework.stereotype.Component;
 import school.hei.federationagricole.entity.dto.CreateMember;
+import school.hei.federationagricole.exception.PaymentException;
 
 import java.util.List;
 

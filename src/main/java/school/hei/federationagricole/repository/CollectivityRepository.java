@@ -34,7 +34,7 @@ public class CollectivityRepository {
 
         String insertMemberSql = """
             INSERT INTO member_collectivity (id_member, id_collectivity, occupation, start_date)
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?::collectivity_occupation, ?)
         """;
 
         try {

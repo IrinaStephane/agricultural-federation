@@ -1,38 +1,391 @@
-### Create Members
-POST http://localhost:8080/members
+### ============================================================
+### Agricultural Federation API - Tests HTTP
+### Base URL : adapter selon votre environnement
+### ============================================================
+
+@baseUrl = http://localhost:8080
+
+### ============================================================
+### PUT /collectivities/{id}  — Fonctionnalité J
+### Attribution d'un numéro et d'un nom à la collectivité 1
+### (collectivité 1 a number=NULL et name=NULL dans data.sql)
+### Résultat attendu : 200 OK avec la collectivité complète
+### ============================================================
+
+PUT {{baseUrl}}/collectivities/1
+Content-Type: application/json
+
+{
+  "number": "COL-001",
+  "name": "Collectivite Antananarivo"
+}
+
+###
+
+### ============================================================
+### PUT /collectivities/{id} — Erreur : déjà identifiée
+### La collectivité 2 a déjà number=COL-002 et name=Collectivite Antsirabe
+### Résultat attendu : 409 Conflict
+### ============================================================
+
+PUT {{baseUrl}}/collectivities/2
+Content-Type: application/json
+
+{
+  "number": "COL-099",
+  "name": "Nouveau Nom"
+}
+
+###
+
+### ============================================================
+### PUT /collectivities/{id} — Erreur : nom déjà pris
+### Après avoir assigné COL-001 à la collectivité 1,
+### tenter d'assigner le même nom à une autre collectivité
+### Résultat attendu : 400 Bad Request
+### ============================================================
+
+PUT {{baseUrl}}/collectivities/1
+Content-Type: application/json
+
+{
+  "number": "COL-003",
+  "name": "Collectivite Antananarivo"
+}
+
+###
+
+### ============================================================
+### PUT /collectivities/{id} — Erreur : collectivité inexistante
+### Résultat attendu : 404 Not Found
+### ============================================================
+
+PUT {{baseUrl}}/collectivities/999
+Content-Type: application/json
+
+{
+  "number": "COL-999",
+  "name": "Collectivite Fantome"
+}
+
+###
+
+### ============================================================
+### POST /members — Fonctionnalité B
+### Admission du membre 11 (Aina Rabeson) dans la collectivité 1
+###
+### Conditions :
+###   - 2 parrains confirmés (membres 1 et 2, ancienneté > 90j ✓)
+###   - Au moins autant de parrains de la collectivité cible (1 et 2 sont dans coll.1 ✓)
+###   - registrationFeePaid: true
+###   - membershipDuesPaid: true
+### Résultat attendu : 201 Created
+### ============================================================
+
+POST {{baseUrl}}/members
 Content-Type: application/json
 
 [
   {
-    "firstName": "Tahiana",
-    "lastName": "Andrianina",
-    "birthDate": "1995-06-12",
-    "gender": "MALE",
-    "address": "Lot IV, Ambohimanarina",
-    "profession": "Informaticien",
-    "phoneNumber": "0340011223",
-    "email": "tahiana@email.com",
-    "occupation": "JUNIOR",
+    "firstName": "Aina",
+    "lastName": "Rabeson",
+    "birthDate": "2000-02-12",
+    "gender": "FEMALE",
+    "address": "Antananarivo",
+    "profession": "Etudiant",
+    "phoneNumber": "0341002011",
+    "email": "aina.rabesdon@email.com",
+    "collectivityIdentifier": 1,
+    "referees": [1, 2],
     "registrationFeePaid": true,
-    "membershipDuesPaid": true,
-    "referees": ["member_001", "member_002"]
+    "membershipDuesPaid": true
   }
 ]
 
-### Create Collectivity
-POST http://localhost:8080/collectivities
+###
+
+### ============================================================
+### POST /members — Admission du membre 12 (Niry Rakotondrabe)
+### dans la collectivité 1
+###
+### Parrains : membre 9 (coll.1) et membre 5 (coll.2)
+###   - 1 parrain dans coll.1, 1 parrain hors coll.1 → inTargetCollectivity >= inOther ✓
+### Résultat attendu : 201 Created
+### ============================================================
+
+POST {{baseUrl}}/members
 Content-Type: application/json
 
 [
   {
-    "location": "Antananarivo-Avaradrano",
-    "members": ["member_001", "member_002", "member_003"],
+    "firstName": "Niry",
+    "lastName": "Rakotondrabe",
+    "birthDate": "1999-08-08",
+    "gender": "MALE",
+    "address": "Antananarivo",
+    "profession": "Etudiant",
+    "phoneNumber": "0341000012",
+    "email": "niry.rakoto@email.com",
+    "collectivityIdentifier": 1,
+    "referees": [9, 5],
+    "registrationFeePaid": true,
+    "membershipDuesPaid": true
+  }
+]
+
+###
+
+### ============================================================
+### POST /members — Admission de plusieurs membres en une seule requête
+### Résultat attendu : 201 Created avec les 2 membres
+### ============================================================
+
+POST {{baseUrl}}/members
+Content-Type: application/json
+
+[
+  {
+    "firstName": "Tiana",
+    "lastName": "Rakoto",
+    "birthDate": "1998-03-15",
+    "gender": "FEMALE",
+    "address": "Antananarivo",
+    "profession": "Agricultrice",
+    "phoneNumber": "0371000020",
+    "email": "tiana.rakoto@email.com",
+    "collectivityIdentifier": 1,
+    "referees": [1, 2],
+    "registrationFeePaid": true,
+    "membershipDuesPaid": true
+  },
+  {
+    "firstName": "Rivo",
+    "lastName": "Andria",
+    "birthDate": "1995-07-20",
+    "gender": "MALE",
+    "address": "Antananarivo",
+    "profession": "Eleveur",
+    "phoneNumber": "0341000921",
+    "email": "rivo.andrisa@email.com",
+    "collectivityIdentifier": 1,
+    "referees": [1, 3],
+    "registrationFeePaid": true,
+    "membershipDuesPaid": true
+  }
+]
+
+###
+
+### ============================================================
+### POST /members — Erreur : paiement incomplet
+### registrationFeePaid: false → doit rejeter
+### Résultat attendu : 400 Bad Request
+### ============================================================
+
+POST {{baseUrl}}/members
+Content-Type: application/json
+
+[
+  {
+    "firstName": "Lova",
+    "lastName": "Ratsima",
+    "birthDate": "2001-01-10",
+    "gender": "MALE",
+    "address": "Antananarivo",
+    "profession": "Etudiant",
+    "phoneNumber": "0341000030",
+    "email": "lova.ratsima@email.com",
+    "collectivityIdentifier": 1,
+    "referees": [1, 2],
+    "registrationFeePaid": false,
+    "membershipDuesPaid": true
+  }
+]
+
+###
+
+### ============================================================
+### POST /members — Erreur : cotisation annuelle non payée
+### membershipDuesPaid: false → doit rejeter
+### Résultat attendu : 400 Bad Request
+### ============================================================
+
+POST {{baseUrl}}/members
+Content-Type: application/json
+
+[
+  {
+    "firstName": "Fara",
+    "lastName": "Rasoа",
+    "birthDate": "2001-05-05",
+    "gender": "FEMALE",
+    "address": "Antananarivo",
+    "profession": "Agronome",
+    "phoneNumber": "0341000031",
+    "email": "fara.rasoa@email.com",
+    "collectivityIdentifier": 1,
+    "referees": [1, 2],
+    "registrationFeePaid": true,
+    "membershipDuesPaid": false
+  }
+]
+
+###
+
+### ============================================================
+### POST /members — Erreur : moins de 2 parrains
+### Résultat attendu : 400 Bad Request
+### ============================================================
+
+POST {{baseUrl}}/members
+Content-Type: application/json
+
+[
+  {
+    "firstName": "Solo",
+    "lastName": "Andriamaro",
+    "birthDate": "2000-09-09",
+    "gender": "MALE",
+    "address": "Antananarivo",
+    "profession": "Pecheur",
+    "phoneNumber": "0341000032",
+    "email": "solo.andriamaro@email.com",
+    "collectivityIdentifier": 1,
+    "referees": [1],
+    "registrationFeePaid": true,
+    "membershipDuesPaid": true
+  }
+]
+
+###
+
+### ============================================================
+### POST /members — Erreur : parrains tous hors collectivité cible
+### 2 parrains de la collectivité 2 seulement → inTargetCollectivity(0) < inOther(2)
+### Résultat attendu : 400 Bad Request
+### ============================================================
+
+POST {{baseUrl}}/members
+Content-Type: application/json
+
+[
+  {
+    "firstName": "Haja",
+    "lastName": "Rasolo",
+    "birthDate": "1997-12-01",
+    "gender": "MALE",
+    "address": "Antananarivo",
+    "profession": "Riziculteur",
+    "phoneNumber": "0341000033",
+    "email": "haja.rasolo@email.com",
+    "collectivityIdentifier": 1,
+    "referees": [5, 6],
+    "registrationFeePaid": true,
+    "membershipDuesPaid": true
+  }
+]
+
+###
+
+### ============================================================
+### POST /collectivities — Fonctionnalité A
+### Création d'une nouvelle collectivité valide
+###
+### Conditions :
+###   - federationApproval: true
+###   - 10 membres dont au minimum 5 avec ancienneté > 6 mois
+###   - structure complète (président, VP, trésorier, secrétaire)
+###   - Les membres 1-10 existent et ont l'ancienneté requise
+### Résultat attendu : 201 Created
+### ============================================================
+
+POST {{baseUrl}}/collectivities
+Content-Type: application/json
+
+[
+  {
+    "location": "Mahajanga",
     "federationApproval": true,
+    "members": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     "structure": {
-      "president": "member_001",
-      "vicePresident": "member_002",
-      "treasurer": "member_003",
-      "secretary": "member_004"
+      "president": 1,
+      "vicePresident": 2,
+      "treasurer": 3,
+      "secretary": 4
     }
   }
 ]
+
+###
+
+### ============================================================
+### POST /collectivities — Erreur : pas d'approbation fédération
+### Résultat attendu : 400 Bad Request
+### ============================================================
+
+POST {{baseUrl}}/collectivities
+Content-Type: application/json
+
+[
+  {
+    "location": "Toamasina",
+    "federationApproval": false,
+    "members": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "structure": {
+      "president": 1,
+      "vicePresident": 2,
+      "treasurer": 3,
+      "secretary": 4
+    }
+  }
+]
+
+###
+
+### ============================================================
+### POST /collectivities — Erreur : moins de 10 membres
+### Résultat attendu : 400 Bad Request
+### ============================================================
+
+POST {{baseUrl}}/collectivities
+Content-Type: application/json
+
+[
+  {
+    "location": "Fianarantsoa",
+    "federationApproval": true,
+    "members": [1, 2, 3, 4],
+    "structure": {
+      "president": 1,
+      "vicePresident": 2,
+      "treasurer": 3,
+      "secretary": 4
+    }
+  }
+]
+
+###
+
+### ============================================================
+### POST /collectivities — Erreur : membre inexistant dans la structure
+### Résultat attendu : 404 Not Found
+### ============================================================
+
+POST {{baseUrl}}/collectivities
+Content-Type: application/json
+
+[
+  {
+    "location": "Toliara",
+    "federationApproval": true,
+    "members": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "structure": {
+      "president": 999,
+      "vicePresident": 2,
+      "treasurer": 3,
+      "secretary": 4
+    }
+  }
+]
+
+###

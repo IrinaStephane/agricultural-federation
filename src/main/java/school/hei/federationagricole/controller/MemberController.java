@@ -40,9 +40,11 @@ public class MemberController {
                     .body(ex.getMessage());
 
         } catch (RuntimeException ex) {
+            String detail = ex.getMessage();
+            if (ex.getCause() != null) detail += " | cause: " + ex.getCause().getMessage();
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Internal server error: " + ex.getMessage());
+                    .body("Internal server error: " + detail);
         }
     }
 }
