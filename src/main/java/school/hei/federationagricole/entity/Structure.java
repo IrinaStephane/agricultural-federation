@@ -6,10 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
-public class CollectivityStructure {
+@NoArgsConstructor
+@AllArgsConstructor
+public class Structure {
     private Member president;
     private Member vicePresident;
     private Member treasurer;
