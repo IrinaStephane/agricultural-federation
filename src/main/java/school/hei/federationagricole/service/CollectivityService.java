@@ -23,7 +23,7 @@ public class CollectivityService {
     private final CollectivityRepository repository;
     private final CollectivityValidator validator;
 
-    // ── Feature A : create collectivities ────────────────────────────────────
+    //  Feature A: create collectivities
 
     public List<CollectivityResponse> createCollectivities(List<CreateCollectivity> createCollectivities) {
         List<Collectivity> collectivitiesToSave = new ArrayList<>();
@@ -58,16 +58,7 @@ public class CollectivityService {
         return saved.stream().map(this::buildResponse).toList();
     }
 
-    // ── Feature J : attribute a unique number and name to a collectivity ─────
-
-    /**
-     * The federation attributes a unique number and name to a collectivity.
-     * Business rules:
-     *  - The collectivity must exist           → 404 if not
-     *  - number and name must be unique        → 400 if already taken by another collectivity
-     *  - Once set, they are immutable          → 409 CONFLICT if already assigned
-     *  - Both fields must be provided          → 400 if blank
-     */
+    //  Feature J: attribute a unique number and name to a collectivity
     public CollectivityResponse identifyCollectivity(Integer id,
                                                      CollectivityIdentificationRequest request) {
 
@@ -115,7 +106,6 @@ public class CollectivityService {
         return buildResponse(updated);
     }
 
-    // ── Shared mapper ────────────────────────────────────────────────────────
 
     private CollectivityResponse buildResponse(Collectivity collectivity) {
         return CollectivityResponse.builder()

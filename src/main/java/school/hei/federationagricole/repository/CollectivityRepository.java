@@ -23,15 +23,10 @@ public class CollectivityRepository {
 
     private final Connection connection;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // CREATE (Feature A)
-    // ─────────────────────────────────────────────────────────────────────────
-
     public Collectivity save(Collectivity collectivity, List<Integer> memberIds,
                              Integer presidentId, Integer vicePresidentId,
                              Integer treasurerId, Integer secretaryId) {
 
-        // BUG FIX: cast enum with ::collectivity_occupation
         String insertCollectivitySql = """
             INSERT INTO collectivity
                 (number, name, speciality, federation_approval,
@@ -105,10 +100,6 @@ public class CollectivityRepository {
         return saved;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Feature J : assign number + name
-    // ─────────────────────────────────────────────────────────────────────────
-
     public boolean existsByNumber(String number) {
         return existsBy("number", number);
     }
@@ -143,10 +134,6 @@ public class CollectivityRepository {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // READ
-    // ─────────────────────────────────────────────────────────────────────────
-
     public Collectivity findById(Integer id) {
         String sql = """
             SELECT id, number, name, speciality, creation_datetime,
@@ -176,10 +163,6 @@ public class CollectivityRepository {
             throw new RuntimeException("Failed to find collectivity", e);
         }
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Private helpers
-    // ─────────────────────────────────────────────────────────────────────────
 
     private boolean existsBy(String column, String value) {
         String sql = "SELECT 1 FROM collectivity WHERE " + column + " = ? LIMIT 1";

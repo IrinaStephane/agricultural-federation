@@ -28,8 +28,6 @@ public class CollectivityController {
     private final MembershipFeeService  membershipFeeService;
     private final TransactionService    transactionService;
 
-    // ── POST /collectivities  (Feature A) ────────────────────────────────────
-
     @PostMapping
     public ResponseEntity<?> createCollectivities(
             @RequestBody(required = false) List<CreateCollectivity> body) {
@@ -48,9 +46,6 @@ public class CollectivityController {
                     .body("Unexpected error: " + e.getMessage());
         }
     }
-
-    // ── PUT /collectivities/{id}/informations  (Feature J / v0.0.2) ──────────
-    // NOTE: v0.0.3 moved this to /collectivities/{id}/informations
 
     @PutMapping("/{id}/informations")
     public ResponseEntity<?> identifyCollectivity(
@@ -75,8 +70,6 @@ public class CollectivityController {
         }
     }
 
-    // ── GET /collectivities/{id}/membershipFees  (Feature v0.0.3) ────────────
-
     @GetMapping("/{id}/membershipFees")
     public ResponseEntity<?> getMembershipFees(@PathVariable Integer id) {
         try {
@@ -88,8 +81,6 @@ public class CollectivityController {
                     .body("Unexpected error: " + e.getMessage());
         }
     }
-
-    // ── POST /collectivities/{id}/membershipFees  (Feature v0.0.3) ───────────
 
     @PostMapping("/{id}/membershipFees")
     public ResponseEntity<?> createMembershipFees(
@@ -109,8 +100,6 @@ public class CollectivityController {
                     .body("Unexpected error: " + e.getMessage());
         }
     }
-
-    // ── GET /collectivities/{id}/transactions  (Feature v0.0.3) ─────────────
 
     @GetMapping("/{id}/transactions")
     public ResponseEntity<?> getTransactions(

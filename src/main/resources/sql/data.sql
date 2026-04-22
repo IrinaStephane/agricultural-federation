@@ -1,7 +1,3 @@
--- =============================================================================
--- data.sql (v0.0.3) – safe with ON CONFLICT guards
--- =============================================================================
-
 INSERT INTO federation (id, cotisation_percentage) VALUES (1, 10.00) ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO member (id, first_name, last_name, birth_date, enrolment_date, address, email, phone_number, profession, gender)
@@ -37,7 +33,7 @@ INSERT INTO member_referee (id_candidate, id_referee, id_collectivity, relations
 VALUES (11,1,1,'Famille'),(11,2,1,'Collegues'),(12,9,1,'Amis'),(12,5,2,'Collegues')
 ON CONFLICT DO NOTHING;
 
--- ─── Accounts for collectivity 1 ─────────────────────────────────────────────
+-- Accounts for collectivity 1
 INSERT INTO account (id, id_collectivity, id_federation, balance) VALUES (1, 1, NULL, 0) ON CONFLICT (id) DO NOTHING;
 INSERT INTO account (id, id_collectivity, id_federation, balance) VALUES (2, 1, NULL, 0) ON CONFLICT (id) DO NOTHING;
 INSERT INTO account (id, id_collectivity, id_federation, balance) VALUES (3, 2, NULL, 0) ON CONFLICT (id) DO NOTHING;
@@ -46,14 +42,14 @@ INSERT INTO cash_account (id_account) VALUES (1) ON CONFLICT (id_account) DO NOT
 INSERT INTO mobile_money_account (id_account, holder_name, service_name, phone_number) VALUES (2,'Jean Rakoto','MVOLA','0341000001') ON CONFLICT (id_account) DO NOTHING;
 INSERT INTO cash_account (id_account) VALUES (3) ON CONFLICT (id_account) DO NOTHING;
 
--- ─── Membership fees for collectivity 1 ──────────────────────────────────────
+-- Membership fees for collectivity 1
 INSERT INTO membership_fee (id, id_collectivity, label, frequency, amount, eligible_from, is_active)
 VALUES
     (1, 1, 'Cotisation mensuelle 2026', 'MONTHLY', 10000.00, '2026-01-01', true),
     (2, 1, 'Cotisation annuelle 2026',  'ANNUALLY', 100000.00, '2026-01-01', true)
 ON CONFLICT (id) DO NOTHING;
 
--- ─── Reset sequences ─────────────────────────────────────────────────────────
+-- Reset sequences
 SELECT setval('member_id_seq',       (SELECT MAX(id) FROM member));
 SELECT setval('collectivity_id_seq', (SELECT MAX(id) FROM collectivity));
 SELECT setval('federation_id_seq',   (SELECT MAX(id) FROM federation));

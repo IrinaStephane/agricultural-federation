@@ -1,9 +1,4 @@
--- =============================================================================
--- schema.sql  – Agricultural Federation  (v0.0.3)
--- Safe to run multiple times thanks to IF NOT EXISTS / DO $$ guards.
--- =============================================================================
-
--- ─── Enum types ──────────────────────────────────────────────────────────────
+-- Enum types
 CREATE TYPE collectivity_occupation AS ENUM ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY','SENIOR','JUNIOR');
 CREATE TYPE federation_occupation AS ENUM ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY');
 CREATE TYPE gender AS ENUM ('MALE','FEMALE');
@@ -13,8 +8,7 @@ CREATE TYPE bank_name AS ENUM ('BRED','MCB','BMOI','BOA','BGFI','AFG','ACCES_BAN
 CREATE TYPE mobile_money_service AS ENUM ('ORANGE_MONEY','MVOLA','AIRTEL_MONEY');
 CREATE TYPE transaction_type AS ENUM ('IN','OUT');
 
--- ─── Core tables ─────────────────────────────────────────────────────────────
-
+-- Core tables
 CREATE TABLE IF NOT EXISTS "public"."member"
 (
     "id"             serial    NOT NULL,
@@ -85,7 +79,7 @@ CREATE TABLE IF NOT EXISTS "public"."mandate_federation"
     PRIMARY KEY ("id")
 );
 
--- ─── Membership fee (replaces cotisation_plan) ────────────────────────────────
+-- Membership fee
 
 CREATE TABLE IF NOT EXISTS "public"."membership_fee"
 (
@@ -99,7 +93,7 @@ CREATE TABLE IF NOT EXISTS "public"."membership_fee"
     PRIMARY KEY ("id")
 );
 
--- ─── Accounts ────────────────────────────────────────────────────────────────
+-- Accounts
 
 CREATE TABLE IF NOT EXISTS "public"."account"
 (
@@ -150,7 +144,7 @@ CREATE TABLE IF NOT EXISTS "public"."mobile_money_account"
         FOREIGN KEY ("id_account") REFERENCES "public"."account" ("id") ON DELETE CASCADE
 );
 
--- ─── Transactions ─────────────────────────────────────────────────────────────
+-- Transactions
 
 CREATE TABLE IF NOT EXISTS "public"."transaction"
 (
@@ -167,7 +161,7 @@ CREATE TABLE IF NOT EXISTS "public"."transaction"
     PRIMARY KEY ("id")
 );
 
--- ─── Foreign keys ─────────────────────────────────────────────────────────────
+-- Foreign keys
 
 ALTER TABLE "public"."collectivity"
     DROP CONSTRAINT IF EXISTS fk_collectivity_federation,

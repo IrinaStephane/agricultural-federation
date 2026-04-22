@@ -23,7 +23,6 @@ public class TransactionRepository {
     private final Connection connection;
     private final AccountRepository accountRepository;
 
-    /** Fetch collectivity transactions in a date range. */
     public List<CollectivityTransaction> findByCollectivityIdAndPeriod(
             Integer collectivityId, LocalDate from, LocalDate to) {
 
@@ -62,10 +61,6 @@ public class TransactionRepository {
         }
     }
 
-    /**
-     * Insert a payment transaction and update account balance.
-     * Returns the saved MemberPayment.
-     */
     public MemberPayment savePayment(Integer memberId, Integer collectivityId,
                                      Integer membershipFeeId, Integer accountId,
                                      BigDecimal amount, PaymentMode paymentMode) {
@@ -120,7 +115,6 @@ public class TransactionRepository {
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
 
     private Member mapMember(ResultSet rs) throws SQLException {
         return Member.builder()

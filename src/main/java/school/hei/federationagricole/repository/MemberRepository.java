@@ -20,10 +20,6 @@ public class MemberRepository {
 
     private final Connection connection;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // READ
-    // ─────────────────────────────────────────────────────────────────────────
-
     public List<Member> findByIds(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) return new ArrayList<>();
 
@@ -72,13 +68,7 @@ public class MemberRepository {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // WRITE  – BUG FIX: cast enums with ::gender and ::collectivity_occupation
-    // ─────────────────────────────────────────────────────────────────────────
-
     public List<Member> saveAll(List<Member> members, List<CreateMember> dtos) {
-
-        // gender must be cast explicitly in PostgreSQL
         String insertMemberSql = """
             INSERT INTO member
                 (first_name, last_name, birth_date, enrolment_date,
@@ -86,7 +76,6 @@ public class MemberRepository {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::gender)
             """;
 
-        // occupation cast too
         String insertMcSql = """
             INSERT INTO member_collectivity
                 (id_member, id_collectivity, occupation, start_date, end_date)
@@ -113,7 +102,7 @@ public class MemberRepository {
                     Member m   = members.get(i);
                     CreateMember dto = dtos.get(i);
 
-                    // ── INSERT member ──────────────────────────────────────
+                    // INSERT member
                     memberStmt.setString(1, m.getFirstName());
                     memberStmt.setString(2, m.getLastName());
                     memberStmt.setDate(3, Date.valueOf(m.getBirthDate()));
@@ -130,17 +119,17 @@ public class MemberRepository {
                     int memberId = keys.getInt(1);
                     m.setId(memberId);
 
-                    // ── INSERT member_collectivity ─────────────────────────
+                    // INSERT member_collectivity
                     String occ = dto.getOccupation() != null
                             ? dto.getOccupation().name() : "JUNIOR";
                     mcStmt.setInt(1, memberId);
                     mcStmt.setInt(2, dto.getCollectivityIdentifier());
-                    mcStmt.setString(3, occ); // cast ::collectivity_occupation in SQL
+                    mcStmt.setString(3, occ);
                     mcStmt.setTimestamp(4, Timestamp.from(Instant.now()));
                     mcStmt.setNull(5, Types.TIMESTAMP);
                     mcStmt.executeUpdate();
 
-                    // ── INSERT referees ────────────────────────────────────
+                    // INSERT referees
                     if (dto.getReferees() != null) {
                         for (Integer refId : dto.getReferees()) {
                             refStmt.setInt(1, memberId);
@@ -167,9 +156,6 @@ public class MemberRepository {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Mapping helpers
-    // ─────────────────────────────────────────────────────────────────────────
 
     private Member mapBasicMember(ResultSet rs) throws SQLException {
         return Member.builder()

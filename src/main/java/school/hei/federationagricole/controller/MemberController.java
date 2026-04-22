@@ -23,8 +23,6 @@ public class MemberController {
     private final MemberService  memberService;
     private final PaymentService paymentService;
 
-    // ── POST /members  (Feature B) ────────────────────────────────────────────
-
     @PostMapping
     public ResponseEntity<?> createMembers(
             @RequestBody(required = false) List<CreateMember> body) {
@@ -43,8 +41,6 @@ public class MemberController {
                     .body("Unexpected error: " + e.getMessage());
         }
     }
-
-    // ── POST /members/{id}/payments  (Feature v0.0.3) ────────────────────────
 
     @PostMapping("/{id}/payments")
     public ResponseEntity<?> createPayments(

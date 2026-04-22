@@ -17,9 +17,7 @@ public class AccountRepository {
 
     private final Connection connection;
 
-    /** Returns the typed FinancialAccount for a given account id, or null if not found. */
     public FinancialAccount findById(Integer accountId) {
-        // 1. Get base account
         String baseSql = "SELECT id, balance FROM account WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(baseSql)) {
             stmt.setInt(1, accountId);
@@ -27,7 +25,6 @@ public class AccountRepository {
             if (!rs.next()) return null;
             BigDecimal balance = rs.getBigDecimal("balance");
 
-            // 2. Determine sub-type
             return detectType(accountId, balance);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find account by id", e);
@@ -44,7 +41,6 @@ public class AccountRepository {
         }
     }
 
-    /** All accounts belonging to a collectivity (all sub-types). */
     public List<FinancialAccount> findByCollectivityId(Integer collectivityId) {
         String sql = "SELECT id, balance FROM account WHERE id_collectivity = ?";
         List<FinancialAccount> result = new ArrayList<>();
@@ -61,7 +57,6 @@ public class AccountRepository {
         }
     }
 
-    /** Update account balance (add delta). */
     public void addToBalance(Integer accountId, BigDecimal delta) {
         String sql = "UPDATE account SET balance = balance + ? WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -73,18 +68,13 @@ public class AccountRepository {
         }
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────────
-
     private FinancialAccount detectType(Integer accountId, BigDecimal balance) throws SQLException {
-        // Check cash
         FinancialAccount cash = tryMapCash(accountId, balance);
         if (cash != null) return cash;
 
-        // Check bank
         FinancialAccount bank = tryMapBank(accountId, balance);
         if (bank != null) return bank;
 
-        // Check mobile
         return tryMapMobile(accountId, balance);
     }
 
