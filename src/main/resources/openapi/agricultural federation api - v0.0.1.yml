@@ -5,7 +5,8 @@ info:
     # Versioning
     This API uses semantic versioning (MAJOR.MINOR.PATCH). Available versions are : 
     - v0.0.1 (2026-04-21) : POST /collectivities for collectivities creation and POST /members for members creation.
-  version: 0.0.1
+    - v0.0.2 (2026-04-22) : Functionality J - Attribution of a unique number and name to a collectivity.
+  version: 0.0.2
 servers:
   - url: 'https://localhost:8080'
 paths:
@@ -35,6 +36,34 @@ paths:
           description: Collectivity without federation approval or structure missing.
         404:
           description: Member not found.
+  '/collectivities/{id}':
+    put:
+      summary: Attribute a unique number and name to a collectivity
+      description: |
+        The federation attributes a unique number and name to a collectivity.
+        The name must be unique within the system.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectivityIdentification'
+      responses:
+        200:
+          description: Updated collectivity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collectivity'
+        400:
+          description: Identification error (e.g. name already exists or number format invalid).
+        404:
+          description: Collectivity not found.
   '/members':
     post:
       summary: Create list of members
@@ -104,6 +133,10 @@ components:
       properties:
         id:
           type: string
+        number:
+          type: string
+        name:
+          type: string
         location:
           type: string
         structure:
@@ -112,6 +145,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Member'
+    CollectivityIdentification:
+      type: object
+      properties:
+        number:
+          type: string
+        name:
+          type: string
     MemberIdentifier:
       type: string
     CreateMember:
