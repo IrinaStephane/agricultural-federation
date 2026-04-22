@@ -1,4 +1,3 @@
--- Initial members to serve as referees or structure members
 INSERT INTO member (id, first_name, last_name, birth_date, gender, address, profession, phone_number, email, occupation, registration_fee_paid, membership_dues_paid)
 VALUES 
 ('member_001', 'Jean', 'Dupont', '1980-05-15', 'MALE', 'Rue 1, Antananarivo', 'Agriculteur', '0341234567', 'jean.dupont@email.com', 'PRESIDENT', true, true),
