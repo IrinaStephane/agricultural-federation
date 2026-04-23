@@ -58,6 +58,15 @@ public class CollectivityService {
         return saved.stream().map(this::buildResponse).toList();
     }
 
+    //  Feature A complement: get collectivity by id
+    public CollectivityResponse getById(Integer id) {
+        Collectivity collectivity = repository.findById(id);
+        if (collectivity == null) {
+            throw new NotFoundException("Collectivity not found with id " + id);
+        }
+        return buildResponse(collectivity);
+    }
+
     //  Feature J: attribute a unique number and name to a collectivity
     public CollectivityResponse identifyCollectivity(Integer id,
                                                      CollectivityIdentificationRequest request) {

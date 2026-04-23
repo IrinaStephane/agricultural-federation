@@ -57,6 +57,37 @@ public class AccountRepository {
         }
     }
 
+    public List<FinancialAccount> findByCollectivityIdAtDate(Integer collectivityId, java.time.LocalDate at) {
+        String sql = """
+            SELECT a.id,
+                   a.balance
+                   - COALESCE(SUM(CASE WHEN t.transaction_type = 'IN'
+                                        AND DATE(t.transaction_date) > ?
+                                   THEN t.amount ELSE 0 END), 0)
+                   + COALESCE(SUM(CASE WHEN t.transaction_type = 'OUT'
+                                        AND DATE(t.transaction_date) > ?
+                                   THEN t.amount ELSE 0 END), 0) AS balance_at
+            FROM account a
+            LEFT JOIN transaction t ON t.id_account = a.id
+            WHERE a.id_collectivity = ?
+            GROUP BY a.id, a.balance
+            """;
+        List<FinancialAccount> result = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setDate(1, java.sql.Date.valueOf(at));
+            stmt.setDate(2, java.sql.Date.valueOf(at));
+            stmt.setInt(3, collectivityId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                FinancialAccount fa = detectType(rs.getInt("id"), rs.getBigDecimal("balance_at"));
+                if (fa != null) result.add(fa);
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to list accounts at date for collectivity", e);
+        }
+    }
+
     public void addToBalance(Integer accountId, BigDecimal delta) {
         String sql = "UPDATE account SET balance = balance + ? WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {

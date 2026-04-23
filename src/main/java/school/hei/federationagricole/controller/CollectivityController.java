@@ -13,6 +13,7 @@ import school.hei.federationagricole.exception.BadRequestException;
 import school.hei.federationagricole.exception.CollectivityAlreadyIdentifiedException;
 import school.hei.federationagricole.exception.NotFoundException;
 import school.hei.federationagricole.service.CollectivityService;
+import school.hei.federationagricole.service.FinancialAccountService;
 import school.hei.federationagricole.service.MembershipFeeService;
 import school.hei.federationagricole.service.TransactionService;
 
@@ -24,9 +25,10 @@ import java.util.List;
 @RequestMapping("/collectivities")
 public class CollectivityController {
 
-    private final CollectivityService   collectivityService;
-    private final MembershipFeeService  membershipFeeService;
-    private final TransactionService    transactionService;
+    private final CollectivityService    collectivityService;
+    private final MembershipFeeService   membershipFeeService;
+    private final TransactionService     transactionService;
+    private final FinancialAccountService financialAccountService;
 
     @PostMapping
     public ResponseEntity<?> createCollectivities(
@@ -110,6 +112,35 @@ public class CollectivityController {
             return ResponseEntity.ok(transactionService.getTransactions(id, from, to));
         } catch (BadRequestException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    // Feature D complement: GET /collectivities/{id}/financialAccounts
+    @GetMapping("/{id}/financialAccounts")
+    public ResponseEntity<?> getFinancialAccounts(
+            @PathVariable Integer id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate at) {
+        try {
+            return ResponseEntity.ok(financialAccountService.getByCollectivity(id, at));
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    // Feature A complement: GET /collectivities/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCollectivity(@PathVariable Integer id) {
+        try {
+            CollectivityResponse response = collectivityService.getById(id);
+            return ResponseEntity.ok(response);
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
