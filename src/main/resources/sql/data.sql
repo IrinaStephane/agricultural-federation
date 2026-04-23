@@ -14,24 +14,24 @@ VALUES
     (10,'Zo','Randria','1997-06-25', NOW() - INTERVAL '4 months', 'Antananarivo','zo.randria@email.com','0341000010','Agronome','FEMALE'),
     (11,'Aina','Rabeson','2000-02-12', NOW() - INTERVAL '1 month', 'Antananarivo','aina.rabeson@email.com','0341000011','Etudiant','FEMALE'),
     (12,'Niry','Rakotondrabe','1999-08-08', NOW() - INTERVAL '2 weeks', 'Antananarivo','niry.rkt@email.com','0341000012','Etudiant','MALE')
-ON CONFLICT (id) DO NOTHING;
+    ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO collectivity (id, number, name, speciality, creation_datetime, federation_approval, authorization_date, id_federation, location)
 VALUES
     (1, NULL, NULL, 'Riziculture', NOW() - INTERVAL '1 year', TRUE, NOW() - INTERVAL '1 year', 1, 'Antananarivo'),
     (2, 'COL-002', 'Collectivite Antsirabe', 'Maraichage', NOW() - INTERVAL '2 years', TRUE, NOW() - INTERVAL '2 years', 1, 'Antsirabe')
-ON CONFLICT (id) DO NOTHING;
+    ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO member_collectivity (id_member, id_collectivity, occupation, start_date)
 VALUES
     (1,1,'PRESIDENT','2024-01-01'),(2,1,'VICE_PRESIDENT','2024-01-01'),(3,1,'TREASURER','2024-01-01'),(4,1,'SECRETARY','2024-01-01'),
     (9,1,'SENIOR','2024-12-01'),(10,1,'SENIOR','2024-12-01'),
     (5,2,'PRESIDENT','2023-01-01'),(6,2,'VICE_PRESIDENT','2023-01-01'),(7,2,'TREASURER','2023-01-01'),(8,2,'SECRETARY','2023-01-01')
-ON CONFLICT DO NOTHING;
+    ON CONFLICT DO NOTHING;
 
 INSERT INTO member_referee (id_candidate, id_referee, id_collectivity, relationship)
 VALUES (11,1,1,'Famille'),(11,2,1,'Collegues'),(12,9,1,'Amis'),(12,5,2,'Collegues')
-ON CONFLICT DO NOTHING;
+    ON CONFLICT DO NOTHING;
 
 -- Accounts for collectivity 1
 INSERT INTO account (id, id_collectivity, id_federation, balance) VALUES (1, 1, NULL, 0) ON CONFLICT (id) DO NOTHING;
@@ -42,12 +42,50 @@ INSERT INTO cash_account (id_account) VALUES (1) ON CONFLICT (id_account) DO NOT
 INSERT INTO mobile_money_account (id_account, holder_name, service_name, phone_number) VALUES (2,'Jean Rakoto','MVOLA','0341000001') ON CONFLICT (id_account) DO NOTHING;
 INSERT INTO cash_account (id_account) VALUES (3) ON CONFLICT (id_account) DO NOTHING;
 
+-- Account bank for collectivity 1 (id=4) and mobile money for collectivity 2 (id=5)
+INSERT INTO account (id, id_collectivity, id_federation, balance) VALUES (4, 1, NULL, 0) ON CONFLICT (id) DO NOTHING;
+INSERT INTO account (id, id_collectivity, id_federation, balance) VALUES (5, 2, NULL, 0) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO bank_account (id_account, holder_name, bank_name, bank_code, branch_code, account_number, rib_key)
+VALUES (4, 'Jean Rakoto', 'BOA', '00001', '00100', '00000000001', '27') ON CONFLICT (id_account) DO NOTHING;
+
+INSERT INTO mobile_money_account (id_account, holder_name, service_name, phone_number)
+VALUES (5, 'Hery Ramiandrisoa', 'ORANGE_MONEY', '0321000005') ON CONFLICT (id_account) DO NOTHING;
+
 -- Membership fees for collectivity 1
 INSERT INTO membership_fee (id, id_collectivity, label, frequency, amount, eligible_from, is_active)
 VALUES
     (1, 1, 'Cotisation mensuelle 2026', 'MONTHLY', 10000.00, '2026-01-01', true),
     (2, 1, 'Cotisation annuelle 2026',  'ANNUALLY', 100000.00, '2026-01-01', true)
-ON CONFLICT (id) DO NOTHING;
+    ON CONFLICT (id) DO NOTHING;
+
+-- Transactions pre-seedées pour tester GET /collectivities/1/financialAccounts?at=...
+-- Transactions en janvier 2026 : +30 000 sur la caisse (id=1), +20 000 sur mvola (id=2)
+INSERT INTO transaction (id, id_member, id_collectivity, id_membership_fee, id_account, transaction_type, amount, transaction_date, payment_mode)
+VALUES
+    (1, 1, 1, 1, 1, 'IN', 10000.00, '2026-01-10 09:00:00', 'CASH'),
+    (2, 2, 1, 1, 1, 'IN', 10000.00, '2026-01-15 10:00:00', 'CASH'),
+    (3, 3, 1, 1, 1, 'IN', 10000.00, '2026-01-20 11:00:00', 'CASH'),
+    (4, 1, 1, 2, 2, 'IN', 20000.00, '2026-01-25 14:00:00', 'MOBILE_BANKING')
+    ON CONFLICT (id) DO NOTHING;
+
+-- Transactions en mars 2026 : +50 000 sur la caisse (id=1), +30 000 sur la banque (id=4)
+INSERT INTO transaction (id, id_member, id_collectivity, id_membership_fee, id_account, transaction_type, amount, transaction_date, payment_mode)
+VALUES
+    (5, 2, 1, 1, 1, 'IN', 10000.00, '2026-03-05 09:00:00', 'CASH'),
+    (6, 3, 1, 1, 1, 'IN', 10000.00, '2026-03-10 10:00:00', 'CASH'),
+    (7, 4, 1, 1, 1, 'IN', 10000.00, '2026-03-15 11:00:00', 'CASH'),
+    (8, 4, 1, 2, 1, 'IN', 20000.00, '2026-03-20 12:00:00', 'CASH'),
+    (9, 2, 1, 2, 4, 'IN', 30000.00, '2026-03-25 13:00:00', 'BANK_TRANSFER')
+    ON CONFLICT (id) DO NOTHING;
+
+-- Mise à jour des soldes courants pour refléter les transactions ci-dessus
+-- Caisse (id=1) : 10000+10000+10000+10000+10000+10000+20000 = 80000
+-- Mvola (id=2)  : 20000
+-- Banque (id=4) : 30000
+UPDATE account SET balance = 80000.00 WHERE id = 1;
+UPDATE account SET balance = 20000.00 WHERE id = 2;
+UPDATE account SET balance = 30000.00 WHERE id = 4;
 
 -- Reset sequences
 SELECT setval('member_id_seq',       (SELECT MAX(id) FROM member));
@@ -55,3 +93,4 @@ SELECT setval('collectivity_id_seq', (SELECT MAX(id) FROM collectivity));
 SELECT setval('federation_id_seq',   (SELECT MAX(id) FROM federation));
 SELECT setval('account_id_seq',      (SELECT MAX(id) FROM account));
 SELECT setval('membership_fee_id_seq',(SELECT MAX(id) FROM membership_fee));
+SELECT setval('transaction_id_seq',  (SELECT MAX(id) FROM transaction));

@@ -1,10 +1,5 @@
-# =============================================================================
-# test.http – Agricultural Federation API (v0.0.3)
-# Base URL: http://localhost:8080
-# =============================================================================
-
-### ──────────────────────────────────────────────────────────────────────────
-### POST /members — cas normal (201) ✅
+### ─────────────────────────────────────────────────────────────────────────
+### POST /members — cas normal (201)
 ### Parrains 1 & 2 sont dans la collectivité 1 et ont > 90 jours d'ancienneté
 ### ──────────────────────────────────────────────────────────────────────────
 POST http://localhost:8080/members
@@ -110,7 +105,7 @@ Content-Type: application/json
 ###
 
 ### ──────────────────────────────────────────────────────────────────────────
-### POST /collectivities — cas normal (201) ✅
+### POST /collectivities — cas normal (201)
 ### Membres 1-10 existent, 1-8 ont > 6 mois d'ancienneté
 ### ──────────────────────────────────────────────────────────────────────────
 POST http://localhost:8080/collectivities
@@ -155,7 +150,7 @@ Content-Type: application/json
 ###
 
 ### ──────────────────────────────────────────────────────────────────────────
-### PUT /collectivities/1/informations — attribuer numéro + nom (201) ✅
+### PUT /collectivities/1/informations — attribuer numéro + nom (201)
 ### Collectivité 1 a number=NULL et name=NULL dans data.sql
 ### ──────────────────────────────────────────────────────────────────────────
 PUT http://localhost:8080/collectivities/1/informations
@@ -209,7 +204,7 @@ Content-Type: application/json
 ###
 
 ### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1/membershipFees — lister les cotisations (200) ✅
+### GET /collectivities/1/membershipFees — lister les cotisations (200)
 ### Cotisations id=1 et id=2 créées dans data.sql pour la collectivité 1
 ### ──────────────────────────────────────────────────────────────────────────
 GET http://localhost:8080/collectivities/1/membershipFees
@@ -217,7 +212,7 @@ GET http://localhost:8080/collectivities/1/membershipFees
 ###
 
 ### ──────────────────────────────────────────────────────────────────────────
-### POST /collectivities/2/membershipFees — créer des cotisations (200) ✅
+### POST /collectivities/2/membershipFees — créer des cotisations (200)
 ### ──────────────────────────────────────────────────────────────────────────
 POST http://localhost:8080/collectivities/2/membershipFees
 Content-Type: application/json
@@ -278,7 +273,7 @@ GET http://localhost:8080/collectivities/999/membershipFees
 ###
 
 ### ──────────────────────────────────────────────────────────────────────────
-### POST /members/1/payments — paiement CASH (201) ✅
+### POST /members/1/payments — paiement CASH (201)
 ### Membre 1, cotisation mensuelle id=1, compte caisse id=1
 ### ──────────────────────────────────────────────────────────────────────────
 POST http://localhost:8080/members/1/payments
@@ -296,7 +291,7 @@ Content-Type: application/json
 ###
 
 ### ──────────────────────────────────────────────────────────────────────────
-### POST /members/2/payments — paiements multiples en une requête (201) ✅
+### POST /members/2/payments — paiements multiples en une requête (201)
 ### Mobile money + cash pour deux cotisations différentes
 ### ──────────────────────────────────────────────────────────────────────────
 POST http://localhost:8080/members/2/payments
@@ -372,3 +367,69 @@ GET http://localhost:8080/collectivities/1/transactions?from=2026-12-31&to=2026-
 ### GET /collectivities/999/transactions — erreur 404 : collectivité inexistante
 ### ──────────────────────────────────────────────────────────────────────────
 GET http://localhost:8080/collectivities/999/transactions?from=2026-01-01&to=2026-12-31
+
+###
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/1 — collectivité existante (200)
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/1
+
+###
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/2 — collectivité identifiée (200)
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/2
+
+###
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/999 — erreur 404 : collectivité inexistante
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/999
+
+###
+
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/1/financialAccounts — soldes courants (200)
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/1/financialAccounts
+
+###
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/1/financialAccounts?at=2026-01-14 — solde avant le 15 jan (200)
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/1/financialAccounts?at=2026-01-14
+
+###
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/1/financialAccounts?at=2026-01-31 — solde fin janvier (200)
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/1/financialAccounts?at=2026-01-31
+
+###
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/1/financialAccounts?at=2099-12-31 — date future (200)
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/1/financialAccounts?at=2099-12-31
+
+###
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/2/financialAccounts — collectivité 2 sans transactions (200)
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/2/financialAccounts
+
+###
+
+### ──────────────────────────────────────────────────────────────────────────
+### GET /collectivities/999/financialAccounts — erreur 404 : collectivité inexistante
+### ──────────────────────────────────────────────────────────────────────────
+GET http://localhost:8080/collectivities/999/financialAccounts
+
+###
