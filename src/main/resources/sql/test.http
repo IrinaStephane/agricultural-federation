@@ -1,4 +1,4 @@
-### ─────────────────────────────────────────────────────────────────────────
+ ### ─────────────────────────────────────────────────────────────────────────
 ### POST /members — cas normal (201)
 ### Parrains 1 & 2 sont dans la collectivité 1 et ont > 90 jours d'ancienneté
 ### ──────────────────────────────────────────────────────────────────────────
@@ -76,31 +76,6 @@ Content-Type: application/json
 ]
 
 ###
-
-### ──────────────────────────────────────────────────────────────────────────
-### POST /members — erreur 400 : règle collectivité (les 2 parrains sont
-### dans la collectivité 2, le candidat postule à la collectivité 1 → refusé)
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/members
-Content-Type: application/json
-
-[
-  {
-    "firstName": "Lanto",
-    "lastName": "Ravelona",
-    "birthDate": "2000-06-20",
-    "gender": "FEMALE",
-    "address": "Antananarivo",
-    "profession": "Technicienne",
-    "phoneNumber": "0341000023",
-    "email": "lanto.rave@email.com",
-    "occupation": "JUNIOR",
-    "collectivityIdentifier": 1,
-    "referees": [5, 6],
-    "registrationFeePaid": true,
-    "membershipDuesPaid": true
-  }
-]
 
 ###
 
