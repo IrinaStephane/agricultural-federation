@@ -415,3 +415,10 @@ Accept: application/json
 ### Stats globales toutes collectivités
 GET http://localhost:8080/collectivites/statistics?from=2026-01-01&to=2026-04-30
 Accept: application/json
+
+###
+### bonus
+GET http://localhost:8080/collectivites/col-1/activities
+
+###
+GET http://localhost:8080/collectivites/col-1/activities/act-c1-ag1/attendance
