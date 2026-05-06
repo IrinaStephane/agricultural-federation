@@ -408,3 +408,12 @@ GET http://localhost:8080/collectivities/2/financialAccounts
 GET http://localhost:8080/collectivities/999/financialAccounts
 
 ###
+
+
+### Stats locales collectivité 1
+GET http://localhost:8080/collectivites/1/statistics?from=2026-01-01&to=2026-04-30
+Accept: application/json
+
+### Stats globales toutes collectivités
+GET http://localhost:8080/collectivites/statistics?from=2026-01-01&to=2026-04-30
+Accept: application/json
