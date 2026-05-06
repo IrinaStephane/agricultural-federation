@@ -11,7 +11,7 @@ CREATE TYPE transaction_type AS ENUM ('IN','OUT');
 -- Core tables
 CREATE TABLE IF NOT EXISTS "public"."member"
 (
-    "id"             varchar   NOT NULL,
+    "id"             serial    NOT NULL,
     "first_name"     varchar   NOT NULL,
     "last_name"      varchar   NOT NULL,
     "birth_date"     date      NOT NULL,
@@ -26,30 +26,30 @@ CREATE TABLE IF NOT EXISTS "public"."member"
 
 CREATE TABLE IF NOT EXISTS "public"."federation"
 (
-    "id"                    varchar       NOT NULL,
+    "id"                    serial        NOT NULL,
     "cotisation_percentage" numeric(5, 2) NOT NULL DEFAULT 10.00,
     PRIMARY KEY ("id")
     );
 
 CREATE TABLE IF NOT EXISTS "public"."collectivity"
 (
-    "id"                  varchar   NOT NULL,
+    "id"                  serial    NOT NULL,
     "number"              varchar            UNIQUE,
     "name"                varchar            UNIQUE,
     "speciality"          varchar,
     "creation_datetime"   timestamp NOT NULL,
     "federation_approval" boolean            DEFAULT FALSE,
     "authorization_date"  timestamp,
-    "id_federation"       varchar   NOT NULL,
+    "id_federation"       int       NOT NULL,
     "location"            varchar   NOT NULL,
     PRIMARY KEY ("id")
     );
 
 CREATE TABLE IF NOT EXISTS "public"."member_collectivity"
 (
-    "id"              varchar                 NOT NULL,
-    "id_member"       varchar                 NOT NULL,
-    "id_collectivity" varchar                 NOT NULL,
+    "id"              serial                  NOT NULL,
+    "id_member"       int                     NOT NULL,
+    "id_collectivity" int                     NOT NULL,
     "occupation"      collectivity_occupation NOT NULL,
     "start_date"      timestamp               NOT NULL,
     "end_date"        timestamp,
@@ -58,21 +58,21 @@ CREATE TABLE IF NOT EXISTS "public"."member_collectivity"
 
 CREATE TABLE IF NOT EXISTS "public"."member_referee"
 (
-    "id"              varchar   NOT NULL,
-    "id_candidate"    varchar   NOT NULL,
-    "id_referee"      varchar   NOT NULL,
-    "id_collectivity" varchar   NOT NULL,
+    "id"              serial    NOT NULL,
+    "id_candidate"    int       NOT NULL,
+    "id_referee"      int       NOT NULL,
+    "id_collectivity" int       NOT NULL,
     "relationship"    varchar   NOT NULL,
     "created_at"      timestamp NOT NULL DEFAULT NOW(),
     PRIMARY KEY ("id"),
-    UNIQUE ("id_candidate", "id_referee")
+    UNIQUE ("id_candidate", "id_referee", "id_collectivity")
     );
 
 CREATE TABLE IF NOT EXISTS "public"."mandate_federation"
 (
-    "id"            varchar               NOT NULL,
-    "id_member"     varchar               NOT NULL,
-    "id_federation" varchar               NOT NULL,
+    "id"            serial                NOT NULL,
+    "id_member"     int                   NOT NULL,
+    "id_federation" int                   NOT NULL,
     "occupation"    federation_occupation NOT NULL,
     "start_date"    timestamp             NOT NULL,
     "end_date"      timestamp,
@@ -83,8 +83,8 @@ CREATE TABLE IF NOT EXISTS "public"."mandate_federation"
 
 CREATE TABLE IF NOT EXISTS "public"."membership_fee"
 (
-    "id"              varchar              NOT NULL,
-    "id_collectivity" varchar              NOT NULL,
+    "id"              serial               NOT NULL,
+    "id_collectivity" int                  NOT NULL,
     "label"           varchar              NOT NULL,
     "frequency"       cotisation_frequency NOT NULL,
     "amount"          numeric(15, 2)       NOT NULL,
@@ -97,9 +97,9 @@ CREATE TABLE IF NOT EXISTS "public"."membership_fee"
 
 CREATE TABLE IF NOT EXISTS "public"."account"
 (
-    "id"              varchar        NOT NULL,
-    "id_collectivity" varchar,
-    "id_federation"   varchar,
+    "id"              serial         NOT NULL,
+    "id_collectivity" int,
+    "id_federation"   int,
     "balance"         numeric(15, 2) NOT NULL DEFAULT 0,
     PRIMARY KEY ("id"),
     CONSTRAINT "chk_account_owner" CHECK (
@@ -110,8 +110,8 @@ CREATE TABLE IF NOT EXISTS "public"."account"
 
 CREATE TABLE IF NOT EXISTS "public"."cash_account"
 (
-    "id"         varchar NOT NULL,
-    "id_account" varchar NOT NULL UNIQUE,
+    "id"         serial NOT NULL,
+    "id_account" int    NOT NULL UNIQUE,
     PRIMARY KEY ("id"),
     CONSTRAINT "fk_cash_account"
     FOREIGN KEY ("id_account") REFERENCES "public"."account" ("id") ON DELETE CASCADE
@@ -119,8 +119,8 @@ CREATE TABLE IF NOT EXISTS "public"."cash_account"
 
 CREATE TABLE IF NOT EXISTS "public"."bank_account"
 (
-    "id"             varchar   NOT NULL,
-    "id_account"     varchar   NOT NULL UNIQUE,
+    "id"             serial    NOT NULL,
+    "id_account"     int       NOT NULL UNIQUE,
     "holder_name"    varchar   NOT NULL,
     "bank_name"      bank_name NOT NULL,
     "bank_code"      char(5)   NOT NULL,
@@ -134,8 +134,8 @@ CREATE TABLE IF NOT EXISTS "public"."bank_account"
 
 CREATE TABLE IF NOT EXISTS "public"."mobile_money_account"
 (
-    "id"           varchar              NOT NULL,
-    "id_account"   varchar              NOT NULL UNIQUE,
+    "id"           serial               NOT NULL,
+    "id_account"   int                  NOT NULL UNIQUE,
     "holder_name"  varchar              NOT NULL,
     "service_name" mobile_money_service NOT NULL,
     "phone_number" varchar              NOT NULL UNIQUE,
@@ -148,11 +148,11 @@ CREATE TABLE IF NOT EXISTS "public"."mobile_money_account"
 
 CREATE TABLE IF NOT EXISTS "public"."transaction"
 (
-    "id"                 varchar          NOT NULL,
-    "id_member"          varchar          NOT NULL,
-    "id_collectivity"    varchar          NOT NULL,
-    "id_membership_fee"  varchar,
-    "id_account"         varchar          NOT NULL,
+    "id"                 serial           NOT NULL,
+    "id_member"          int              NOT NULL,
+    "id_collectivity"    int              NOT NULL,
+    "id_membership_fee"  int,
+    "id_account"         int              NOT NULL,
     "transaction_type"   transaction_type NOT NULL DEFAULT 'IN',
     "amount"             numeric(15, 2)   NOT NULL,
     "transaction_date"   timestamp        NOT NULL DEFAULT NOW(),

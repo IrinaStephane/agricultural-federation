@@ -30,7 +30,7 @@ public class CollectivityValidator {
             throw new BadRequestException("Collectivity structure is required.");
         }
 
-        List<Integer> memberIds = req.getMemberIds();
+        List<String> memberIds = req.getMemberIds();
         if (memberIds == null || memberIds.isEmpty()) {
             throw new BadRequestException("Collectivity must have at least 10 members.");
         }
@@ -54,9 +54,9 @@ public class CollectivityValidator {
         validateStructure(req.getStructure(), memberIds);
     }
 
-    private void validateAllMembersExist(List<Integer> memberIds) {
-        List<Integer> missing = new ArrayList<>();
-        for (Integer id : memberIds) {
+    private void validateAllMembersExist(List<String> memberIds) {
+        List<String> missing = new ArrayList<>();
+        for (String id : memberIds) {
             if (!memberRepository.existsById(id)) missing.add(id);
         }
         if (!missing.isEmpty()) {
@@ -64,7 +64,7 @@ public class CollectivityValidator {
         }
     }
 
-    private void validateStructure(CreateStructure structure, List<Integer> memberIds) {
+    private void validateStructure(CreateStructure structure, List<String> memberIds) {
         if (structure.getPresidentId()      == null) throw new BadRequestException("President ID is required.");
         if (structure.getVicePresidentId()  == null) throw new BadRequestException("Vice President ID is required.");
         if (structure.getTreasurerId()      == null) throw new BadRequestException("Treasurer ID is required.");
@@ -81,7 +81,7 @@ public class CollectivityValidator {
         checkInList(structure.getTreasurerId(),     memberIds, "Treasurer");
         checkInList(structure.getSecretaryId(),     memberIds, "Secretary");
 
-        List<Integer> roleIds = List.of(
+        List<String> roleIds = List.of(
                 structure.getPresidentId(), structure.getVicePresidentId(),
                 structure.getTreasurerId(), structure.getSecretaryId());
         if (roleIds.stream().distinct().count() != 4) {
@@ -90,13 +90,13 @@ public class CollectivityValidator {
     }
 
     /** BUG FIX: throw NotFoundException when member does NOT exist (was inverted before). */
-    private void checkExists(Integer memberId, String role) {
+    private void checkExists(String memberId, String role) {
         if (!memberRepository.existsById(memberId)) {
             throw new NotFoundException(role + " not found with ID: " + memberId);
         }
     }
 
-    private void checkInList(Integer memberId, List<Integer> memberIds, String role) {
+    private void checkInList(String memberId, List<String> memberIds, String role) {
         if (!memberIds.contains(memberId)) {
             throw new BadRequestException(role + " must be included in the collectivity member list.");
         }

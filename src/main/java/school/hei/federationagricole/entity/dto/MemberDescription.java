@@ -7,11 +7,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class CreateStructure {
-    private String presidentId;
-    private String vicePresidentId;
-    private String treasurerId;
-    private String secretaryId;
+@NoArgsConstructor
+public class MemberDescription {
+    private String id;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String occupation;
 }

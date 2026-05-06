@@ -29,7 +29,7 @@ public class PaymentService {
     private final MembershipFeeRepository  membershipFeeRepository;
     private final AccountRepository        accountRepository;
 
-    public List<MemberPayment> createPayments(Integer memberId, List<CreateMemberPayment> dtos) {
+    public List<MemberPayment> createPayments(String memberId, List<CreateMemberPayment> dtos) {
 
         if (!memberRepository.existsById(memberId)) {
             throw new NotFoundException("Member not found with id " + memberId);
@@ -57,7 +57,7 @@ public class PaymentService {
 
         return dtos.stream()
                 .map(dto -> {
-                    Integer collectivityId = resolveCollectivityId(
+                    String collectivityId = resolveCollectivityId(
                             dto.getMembershipFeeIdentifier(),
                             dto.getAccountCreditedIdentifier());
                     return transactionRepository.savePayment(
@@ -71,16 +71,16 @@ public class PaymentService {
                 .toList();
     }
 
-    private Integer resolveCollectivityId(Integer membershipFeeId, Integer accountId) {
+    private String resolveCollectivityId(String membershipFeeId, String accountId) {
         if (membershipFeeId != null) {
             MembershipFee fee = membershipFeeRepository.findById(membershipFeeId);
             if (fee != null) return fee.getCollectivityId();
         }
         String sql = "SELECT id_collectivity FROM account WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, accountId);
+            stmt.setString(1, accountId);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) return rs.getInt("id_collectivity");
+            if (rs.next()) return rs.getString("id_collectivity");
             throw new NotFoundException("Cannot resolve collectivity for account " + accountId);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to resolve collectivity from account", e);

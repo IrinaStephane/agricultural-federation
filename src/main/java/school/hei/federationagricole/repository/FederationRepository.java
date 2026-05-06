@@ -50,22 +50,20 @@ public class FederationRepository {
             while (rs.next()) {
                 if (federation == null) {
                     federation = Federation.builder()
-                            .id(rs.getInt("federation_id"))
+                            .id(rs.getString("federation_id"))
                             .cotisationPercentage(rs.getDouble("cotisation_percentage"))
                             .build();
                 }
 
-                int memberId = rs.getInt("id_member");
-                if (memberId > 0) {
-                    Member member = mapResultSetToMember(rs);
-                    String occupation = rs.getString("occupation");
+                String memberId = rs.getString("id_member");
+                Member member = mapResultSetToMember(rs);
+                String occupation = rs.getString("occupation");
 
-                    switch (FederationOccupation.valueOf(occupation)) {
-                        case PRESIDENT -> structure.setPresident(member);
-                        case VICE_PRESIDENT -> structure.setVicePresident(member);
-                        case TREASURER -> structure.setTreasurer(member);
-                        case SECRETARY -> structure.setSecretary(member);
-                    }
+                switch (FederationOccupation.valueOf(occupation)) {
+                    case PRESIDENT -> structure.setPresident(member);
+                    case VICE_PRESIDENT -> structure.setVicePresident(member);
+                    case TREASURER -> structure.setTreasurer(member);
+                    case SECRETARY -> structure.setSecretary(member);
                 }
             }
 
@@ -82,7 +80,7 @@ public class FederationRepository {
 
     private Member mapResultSetToMember(ResultSet rs) throws SQLException {
         return Member.builder()
-                .id(rs.getInt("id_member"))
+                .id(rs.getString("id_member"))
                 .firstName(rs.getString("first_name"))
                 .lastName(rs.getString("last_name"))
                 .birthDate(rs.getDate("birth_date").toLocalDate())

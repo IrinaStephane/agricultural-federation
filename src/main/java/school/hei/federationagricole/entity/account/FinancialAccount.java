@@ -20,6 +20,6 @@ import java.math.BigDecimal;
     @JsonSubTypes.Type(value = MobileBankingAccount.class, name = "MOBILE_BANKING")
 })
 public abstract class FinancialAccount {
-    private Integer id;
+    private String id;
     private BigDecimal amount;
 }

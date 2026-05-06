@@ -19,12 +19,12 @@ public class MembershipFeeService {
     private final MembershipFeeRepository membershipFeeRepository;
     private final CollectivityRepository  collectivityRepository;
 
-    public List<MembershipFee> getByCollectivity(Integer collectivityId) {
+    public List<MembershipFee> getByCollectivity(String collectivityId) {
         ensureCollectivityExists(collectivityId);
         return membershipFeeRepository.findByCollectivityId(collectivityId);
     }
 
-    public List<MembershipFee> create(Integer collectivityId, List<CreateMembershipFee> dtos) {
+    public List<MembershipFee> create(String collectivityId, List<CreateMembershipFee> dtos) {
         ensureCollectivityExists(collectivityId);
 
         for (CreateMembershipFee dto : dtos) {
@@ -42,7 +42,7 @@ public class MembershipFeeService {
         return membershipFeeRepository.saveAll(collectivityId, dtos);
     }
 
-    private void ensureCollectivityExists(Integer id) {
+    private void ensureCollectivityExists(String id) {
         if (collectivityRepository.findById(id) == null) {
             throw new NotFoundException("Collectivity not found with id " + id);
         }

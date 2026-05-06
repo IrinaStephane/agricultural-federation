@@ -18,7 +18,7 @@ public class TransactionService {
     private final TransactionRepository  transactionRepository;
     private final CollectivityRepository collectivityRepository;
 
-    public List<CollectivityTransaction> getTransactions(Integer collectivityId,
+    public List<CollectivityTransaction> getTransactions(String collectivityId,
                                                          LocalDate from, LocalDate to) {
         if (collectivityRepository.findById(collectivityId) == null) {
             throw new NotFoundException("Collectivity not found with id " + collectivityId);

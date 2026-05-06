@@ -1,5 +1,8 @@
 -- Enum types
 CREATE TYPE collectivity_occupation AS ENUM ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY','SENIOR','JUNIOR');
+CREATE TYPE activity_type AS ENUM ('MEETING','TRAINING','OTHER');
+CREATE TYPE attendance_status AS ENUM ('MISSING','ATTENDED','UNDEFINED');
+CREATE TYPE week_day AS ENUM ('MO','TU','WE','TH','FR','SA','SU');
 CREATE TYPE federation_occupation AS ENUM ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY');
 CREATE TYPE gender AS ENUM ('MALE','FEMALE');
 CREATE TYPE cotisation_frequency AS ENUM ('WEEKLY','MONTHLY','ANNUALLY','PUNCTUALLY');
@@ -221,3 +224,58 @@ DROP CONSTRAINT IF EXISTS fk_account_collectivity,
         FOREIGN KEY ("id_collectivity") REFERENCES "public"."collectivity" ("id"),
     ADD CONSTRAINT "fk_account_federation"
         FOREIGN KEY ("id_federation") REFERENCES "public"."federation" ("id");
+-- ─── Activities (Feature E) ────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS "public"."collectivity_activity"
+(
+    "id"                       varchar       NOT NULL,
+    "id_collectivity"          varchar       NOT NULL,
+    "label"                    varchar       NOT NULL,
+    "activity_type"            activity_type NOT NULL,
+    "executive_date"           date,
+    "recurrence_week_ordinal"  integer,
+    "recurrence_day_of_week"   week_day,
+    PRIMARY KEY ("id"),
+    CONSTRAINT "chk_activity_date_or_recurrence" CHECK (
+("executive_date" IS NOT NULL AND "recurrence_week_ordinal" IS NULL AND "recurrence_day_of_week" IS NULL)
+    OR ("executive_date" IS NULL)
+    )
+    );
+
+CREATE TABLE IF NOT EXISTS "public"."activity_occupation_concerned"
+(
+    "id_activity"  varchar                 NOT NULL,
+    "occupation"   collectivity_occupation NOT NULL,
+    PRIMARY KEY ("id_activity", "occupation")
+    );
+
+-- ─── Attendance (Feature F) ────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS "public"."activity_attendance"
+(
+    "id"                varchar           NOT NULL,
+    "id_activity"       varchar           NOT NULL,
+    "id_member"         varchar           NOT NULL,
+    "attendance_status" attendance_status NOT NULL DEFAULT 'UNDEFINED',
+    PRIMARY KEY ("id"),
+    UNIQUE ("id_activity", "id_member")
+    );
+
+-- Foreign keys for new tables
+ALTER TABLE "public"."collectivity_activity"
+DROP CONSTRAINT IF EXISTS fk_activity_collectivity,
+    ADD CONSTRAINT "fk_activity_collectivity"
+        FOREIGN KEY ("id_collectivity") REFERENCES "public"."collectivity" ("id");
+
+ALTER TABLE "public"."activity_occupation_concerned"
+DROP CONSTRAINT IF EXISTS fk_aoc_activity,
+    ADD CONSTRAINT "fk_aoc_activity"
+        FOREIGN KEY ("id_activity") REFERENCES "public"."collectivity_activity" ("id");
+
+ALTER TABLE "public"."activity_attendance"
+DROP CONSTRAINT IF EXISTS fk_attendance_activity,
+    DROP CONSTRAINT IF EXISTS fk_attendance_member,
+    ADD CONSTRAINT "fk_attendance_activity"
+        FOREIGN KEY ("id_activity") REFERENCES "public"."collectivity_activity" ("id"),
+    ADD CONSTRAINT "fk_attendance_member"
+        FOREIGN KEY ("id_member") REFERENCES "public"."member" ("id");

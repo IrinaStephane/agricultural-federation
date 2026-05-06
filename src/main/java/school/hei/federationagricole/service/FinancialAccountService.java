@@ -17,7 +17,7 @@ public class FinancialAccountService {
     private final AccountRepository      accountRepository;
     private final CollectivityRepository collectivityRepository;
 
-    public List<FinancialAccount> getByCollectivity(Integer collectivityId, LocalDate at) {
+    public List<FinancialAccount> getByCollectivity(String collectivityId, LocalDate at) {
         if (collectivityRepository.findById(collectivityId) == null) {
             throw new NotFoundException("Collectivity not found with id " + collectivityId);
         }

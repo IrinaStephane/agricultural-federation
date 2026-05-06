@@ -13,7 +13,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @Builder
 public class MemberCollectivity {
-    private int id;
+    private String id;
     private Member member;
     private Collectivity collectivity;
     private CollectivityOccupation occupation;

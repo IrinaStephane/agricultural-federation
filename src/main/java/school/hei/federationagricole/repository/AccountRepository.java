@@ -17,38 +17,37 @@ public class AccountRepository {
 
     private final Connection connection;
 
-    public FinancialAccount findById(Integer accountId) {
+    public FinancialAccount findById(String accountId) {
         String baseSql = "SELECT id, balance FROM account WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(baseSql)) {
-            stmt.setInt(1, accountId);
+            stmt.setString(1, accountId);
             ResultSet rs = stmt.executeQuery();
             if (!rs.next()) return null;
             BigDecimal balance = rs.getBigDecimal("balance");
-
             return detectType(accountId, balance);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find account by id", e);
         }
     }
 
-    public boolean existsById(Integer accountId) {
+    public boolean existsById(String accountId) {
         String sql = "SELECT 1 FROM account WHERE id = ? LIMIT 1";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, accountId);
+            stmt.setString(1, accountId);
             return stmt.executeQuery().next();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to check account existence", e);
         }
     }
 
-    public List<FinancialAccount> findByCollectivityId(Integer collectivityId) {
+    public List<FinancialAccount> findByCollectivityId(String collectivityId) {
         String sql = "SELECT id, balance FROM account WHERE id_collectivity = ?";
         List<FinancialAccount> result = new ArrayList<>();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, collectivityId);
+            stmt.setString(1, collectivityId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                FinancialAccount fa = detectType(rs.getInt("id"), rs.getBigDecimal("balance"));
+                FinancialAccount fa = detectType(rs.getString("id"), rs.getBigDecimal("balance"));
                 if (fa != null) result.add(fa);
             }
             return result;
@@ -57,7 +56,7 @@ public class AccountRepository {
         }
     }
 
-    public List<FinancialAccount> findByCollectivityIdAtDate(Integer collectivityId, java.time.LocalDate at) {
+    public List<FinancialAccount> findByCollectivityIdAtDate(String collectivityId, java.time.LocalDate at) {
         String sql = """
             SELECT a.id,
                    a.balance
@@ -76,10 +75,10 @@ public class AccountRepository {
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setDate(1, java.sql.Date.valueOf(at));
             stmt.setDate(2, java.sql.Date.valueOf(at));
-            stmt.setInt(3, collectivityId);
+            stmt.setString(3, collectivityId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                FinancialAccount fa = detectType(rs.getInt("id"), rs.getBigDecimal("balance_at"));
+                FinancialAccount fa = detectType(rs.getString("id"), rs.getBigDecimal("balance_at"));
                 if (fa != null) result.add(fa);
             }
             return result;
@@ -88,18 +87,18 @@ public class AccountRepository {
         }
     }
 
-    public void addToBalance(Integer accountId, BigDecimal delta) {
+    public void addToBalance(String accountId, BigDecimal delta) {
         String sql = "UPDATE account SET balance = balance + ? WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setBigDecimal(1, delta);
-            stmt.setInt(2, accountId);
+            stmt.setString(2, accountId);
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update account balance", e);
         }
     }
 
-    private FinancialAccount detectType(Integer accountId, BigDecimal balance) throws SQLException {
+    private FinancialAccount detectType(String accountId, BigDecimal balance) throws SQLException {
         FinancialAccount cash = tryMapCash(accountId, balance);
         if (cash != null) return cash;
 
@@ -109,10 +108,10 @@ public class AccountRepository {
         return tryMapMobile(accountId, balance);
     }
 
-    private CashAccount tryMapCash(Integer accountId, BigDecimal balance) throws SQLException {
+    private CashAccount tryMapCash(String accountId, BigDecimal balance) throws SQLException {
         String sql = "SELECT id FROM cash_account WHERE id_account = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, accountId);
+            stmt.setString(1, accountId);
             ResultSet rs = stmt.executeQuery();
             if (!rs.next()) return null;
             return CashAccount.builder()
@@ -122,13 +121,13 @@ public class AccountRepository {
         }
     }
 
-    private BankAccount tryMapBank(Integer accountId, BigDecimal balance) throws SQLException {
+    private BankAccount tryMapBank(String accountId, BigDecimal balance) throws SQLException {
         String sql = """
             SELECT holder_name, bank_name, bank_code, branch_code, account_number, rib_key
             FROM bank_account WHERE id_account = ?
             """;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, accountId);
+            stmt.setString(1, accountId);
             ResultSet rs = stmt.executeQuery();
             if (!rs.next()) return null;
             return BankAccount.builder()
@@ -144,10 +143,10 @@ public class AccountRepository {
         }
     }
 
-    private MobileBankingAccount tryMapMobile(Integer accountId, BigDecimal balance) throws SQLException {
+    private MobileBankingAccount tryMapMobile(String accountId, BigDecimal balance) throws SQLException {
         String sql = "SELECT holder_name, service_name, phone_number FROM mobile_money_account WHERE id_account = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, accountId);
+            stmt.setString(1, accountId);
             ResultSet rs = stmt.executeQuery();
             if (!rs.next()) return null;
             return MobileBankingAccount.builder()

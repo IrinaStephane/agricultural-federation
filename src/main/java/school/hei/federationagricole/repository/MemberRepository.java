@@ -20,7 +20,7 @@ public class MemberRepository {
 
     private final Connection connection;
 
-    public List<Member> findByIds(List<Integer> ids) {
+    public List<Member> findByIds(List<String> ids) {
         if (ids == null || ids.isEmpty()) return new ArrayList<>();
 
         String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
@@ -37,13 +37,13 @@ public class MemberRepository {
             """.formatted(placeholders);
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            for (int i = 0; i < ids.size(); i++) stmt.setInt(i + 1, ids.get(i));
+            for (int i = 0; i < ids.size(); i++) stmt.setString(i + 1, ids.get(i));
 
             ResultSet rs = stmt.executeQuery();
-            Map<Integer, Member> map = new LinkedHashMap<>();
+            Map<String, Member> map = new LinkedHashMap<>();
 
             while (rs.next()) {
-                int id = rs.getInt("m_id");
+                String id = rs.getString("m_id");
                 Member member = map.computeIfAbsent(id, k -> {
                     try { return mapBasicMember(rs); }
                     catch (SQLException e) { throw new RuntimeException(e); }
@@ -58,10 +58,10 @@ public class MemberRepository {
         }
     }
 
-    public boolean existsById(Integer id) {
+    public boolean existsById(String id) {
         String sql = "SELECT 1 FROM member WHERE id = ? LIMIT 1";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
+            stmt.setString(1, id);
             return stmt.executeQuery().next();
         } catch (SQLException e) {
             throw new RuntimeException("existsById failed", e);
@@ -71,21 +71,21 @@ public class MemberRepository {
     public List<Member> saveAll(List<Member> members, List<CreateMember> dtos) {
         String insertMemberSql = """
             INSERT INTO member
-                (first_name, last_name, birth_date, enrolment_date,
+                (id, first_name, last_name, birth_date, enrolment_date,
                  address, email, phone_number, profession, gender)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::gender)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::gender)
             """;
 
         String insertMcSql = """
             INSERT INTO member_collectivity
-                (id_member, id_collectivity, occupation, start_date, end_date)
-            VALUES (?, ?, ?::collectivity_occupation, ?, ?)
+                (id, id_member, id_collectivity, occupation, start_date, end_date)
+            VALUES (?, ?, ?, ?::collectivity_occupation, ?, ?)
             """;
 
         String insertRefSql = """
             INSERT INTO member_referee
-                (id_candidate, id_referee, id_collectivity, relationship, created_at)
-            VALUES (?, ?, ?, ?, ?)
+                (id, id_candidate, id_referee, id_collectivity, relationship, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """;
 
         try {
@@ -93,50 +93,53 @@ public class MemberRepository {
             List<Member> result = new ArrayList<>();
 
             try (
-                PreparedStatement memberStmt = connection.prepareStatement(
-                        insertMemberSql, Statement.RETURN_GENERATED_KEYS);
-                PreparedStatement mcStmt = connection.prepareStatement(insertMcSql);
-                PreparedStatement refStmt = connection.prepareStatement(insertRefSql)
+                    PreparedStatement memberStmt = connection.prepareStatement(insertMemberSql);
+                    PreparedStatement mcStmt = connection.prepareStatement(insertMcSql);
+                    PreparedStatement refStmt = connection.prepareStatement(insertRefSql)
             ) {
                 for (int i = 0; i < members.size(); i++) {
                     Member m   = members.get(i);
                     CreateMember dto = dtos.get(i);
 
-                    // INSERT member
-                    memberStmt.setString(1, m.getFirstName());
-                    memberStmt.setString(2, m.getLastName());
-                    memberStmt.setDate(3, Date.valueOf(m.getBirthDate()));
-                    memberStmt.setTimestamp(4, Timestamp.from(Instant.now()));
-                    memberStmt.setString(5, m.getAddress());
-                    memberStmt.setString(6, m.getEmail());
-                    memberStmt.setString(7, m.getPhoneNumber());
-                    memberStmt.setString(8, m.getProfession());
-                    memberStmt.setString(9, m.getGender().name()); // cast ::gender in SQL
-
-                    memberStmt.executeUpdate();
-                    ResultSet keys = memberStmt.getGeneratedKeys();
-                    if (!keys.next()) throw new RuntimeException("No generated key for member");
-                    int memberId = keys.getInt(1);
+                    // Générer un ID string unique pour le membre
+                    String memberId = "mbr-" + UUID.randomUUID().toString().substring(0, 8);
                     m.setId(memberId);
 
+                    // INSERT member
+                    memberStmt.setString(1, memberId);
+                    memberStmt.setString(2, m.getFirstName());
+                    memberStmt.setString(3, m.getLastName());
+                    memberStmt.setDate(4, Date.valueOf(m.getBirthDate()));
+                    memberStmt.setTimestamp(5, Timestamp.from(Instant.now()));
+                    memberStmt.setString(6, m.getAddress());
+                    memberStmt.setString(7, m.getEmail());
+                    memberStmt.setString(8, m.getPhoneNumber());
+                    memberStmt.setString(9, m.getProfession());
+                    memberStmt.setString(10, m.getGender().name());
+                    memberStmt.executeUpdate();
+
                     // INSERT member_collectivity
+                    String mcId = "mc-" + UUID.randomUUID().toString().substring(0, 8);
                     String occ = dto.getOccupation() != null
                             ? dto.getOccupation().name() : "JUNIOR";
-                    mcStmt.setInt(1, memberId);
-                    mcStmt.setInt(2, dto.getCollectivityIdentifier());
-                    mcStmt.setString(3, occ);
-                    mcStmt.setTimestamp(4, Timestamp.from(Instant.now()));
-                    mcStmt.setNull(5, Types.TIMESTAMP);
+                    mcStmt.setString(1, mcId);
+                    mcStmt.setString(2, memberId);
+                    mcStmt.setString(3, dto.getCollectivityIdentifier());
+                    mcStmt.setString(4, occ);
+                    mcStmt.setTimestamp(5, Timestamp.from(Instant.now()));
+                    mcStmt.setNull(6, Types.TIMESTAMP);
                     mcStmt.executeUpdate();
 
                     // INSERT referees
                     if (dto.getReferees() != null) {
-                        for (Integer refId : dto.getReferees()) {
-                            refStmt.setInt(1, memberId);
-                            refStmt.setInt(2, refId);
-                            refStmt.setInt(3, dto.getCollectivityIdentifier());
-                            refStmt.setString(4, "FRIEND");
-                            refStmt.setTimestamp(5, Timestamp.from(Instant.now()));
+                        for (String refId : dto.getReferees()) {
+                            String mrId = "mr-" + UUID.randomUUID().toString().substring(0, 8);
+                            refStmt.setString(1, mrId);
+                            refStmt.setString(2, memberId);
+                            refStmt.setString(3, refId);
+                            refStmt.setString(4, dto.getCollectivityIdentifier());
+                            refStmt.setString(5, "FRIEND");
+                            refStmt.setTimestamp(6, Timestamp.from(Instant.now()));
                             refStmt.addBatch();
                         }
                         refStmt.executeBatch();
@@ -156,10 +159,9 @@ public class MemberRepository {
         }
     }
 
-
     private Member mapBasicMember(ResultSet rs) throws SQLException {
         return Member.builder()
-                .id(rs.getInt("m_id"))
+                .id(rs.getString("m_id"))
                 .firstName(rs.getString("first_name"))
                 .lastName(rs.getString("last_name"))
                 .birthDate(rs.getDate("birth_date").toLocalDate())
@@ -176,7 +178,7 @@ public class MemberRepository {
     private MemberCollectivity mapMemberCollectivity(ResultSet rs, Member member)
             throws SQLException {
         Collectivity c = Collectivity.builder()
-                .id(rs.getInt("c_id"))
+                .id(rs.getString("c_id"))
                 .name(rs.getString("name"))
                 .number(rs.getString("number"))
                 .speciality(rs.getString("speciality"))
@@ -186,7 +188,7 @@ public class MemberRepository {
                 .build();
 
         MemberCollectivity mc = MemberCollectivity.builder()
-                .id(rs.getInt("mc_id"))
+                .id(rs.getString("mc_id"))
                 .startDate(rs.getTimestamp("start_date").toInstant())
                 .endDate(rs.getTimestamp("end_date") != null
                         ? rs.getTimestamp("end_date").toInstant() : null)

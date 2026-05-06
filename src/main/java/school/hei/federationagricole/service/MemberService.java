@@ -27,7 +27,7 @@ public class MemberService {
         memberList.forEach(paymentValidator::validate);
         memberList.forEach(sponsorCountValidator::validate);
 
-        List<Integer> sponsorIds = memberList.stream()
+        List<String> sponsorIds = memberList.stream()
                 .flatMap(m -> m.getReferees().stream())
                 .distinct()
                 .toList();
@@ -61,7 +61,6 @@ public class MemberService {
     }
 
     private List<MemberResponse> buildResponse(List<Member> saved, List<CreateMember> dtos) {
-
         return IntStream.range(0, saved.size())
                 .mapToObj(i -> {
                     Member m = saved.get(i);
@@ -77,7 +76,7 @@ public class MemberService {
                             .profession(m.getProfession())
                             .phoneNumber(m.getPhoneNumber())
                             .email(m.getEmail())
-                            .referees(dto.getReferees())
+                            .referees(dto.getReferees()) // ← List<String>
                             .build();
                 })
                 .toList();

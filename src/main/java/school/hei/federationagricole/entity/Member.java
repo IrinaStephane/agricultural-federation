@@ -19,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 public class Member {
 
-    private Integer id;
+    private String id;          // ← varchar (ex: "C1-M1")
     private String firstName;
     private String lastName;
     private LocalDate birthDate;
@@ -43,7 +43,7 @@ public class Member {
                 Duration.between(enrolmentDate, Instant.now()).toDays() >= 90;
     }
 
-    public List<Integer> getIdsOfActualBelongingCollectivities() {
+    public List<String> getIdsOfActualBelongingCollectivities() {
         if (memberCollectivities == null) return List.of();
 
         return memberCollectivities.stream()
@@ -51,9 +51,8 @@ public class Member {
                 .map(mc -> mc.getCollectivity().getId())
                 .toList();
     }
-    public List<Integer> getReferees(){
+
+    public List<String> getReferees() {
         return this.referees.stream().map(Member::getId).toList();
     }
-
-
 }

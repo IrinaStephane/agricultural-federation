@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MemberPayment {
-    private Integer id;
+    private String id;
     private BigDecimal amount;
     private PaymentMode paymentMode;
     private FinancialAccount accountCredited;

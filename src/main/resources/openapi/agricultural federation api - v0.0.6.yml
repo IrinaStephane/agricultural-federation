@@ -1,5 +1,3 @@
-
-
 openapi: 3.1.0
 info:
   title: Agricultural federation API
@@ -8,8 +6,11 @@ info:
     This API uses semantic versioning (MAJOR.MINOR.PATCH). Available versions are : 
     - v0.0.1 (2026-04-21) : POST /collectivities for collectivities creation and POST /members for members creation.
     - v0.0.2 (2026-04-22) : PUT /collectivities/{id}/informations for collectivity information update.
-    - v0.0.4 (2026-04-23) : GET /collectivities/{id} to retrieve a single collectivity with its members, and GET /collectivities/{id}/financialAccounts to list financial accounts with optional balance-at-date query parameter.
-  version: 0.0.4
+    - v0.0.3 (2026-04-23) : New features about membership fees, collectivities transactions and its financial accounts, and members payments.
+    - v0.0.4 (2026-04-23) : GET /collectivities/{id} and  GET /collectivities/{id}/financialAccounts
+    - v0.0.5 (2026-05-05) : Partial features collectivity statistics.
+    - v0.0.6 (2026-05-05) : New features about collectivities activities and assiduity.
+  version: 0.0.6
 servers:
   - url: 'https://localhost:8080'
 paths:
@@ -41,60 +42,39 @@ paths:
           description: Member not found.
   '/collectivities/{id}':
     get:
-      summary: Retrieve a collectivity by its identifier
-      description: |
-        Returns the collectivity matching the given ID, including its `members` list
-        (all currently enrolled members) and its `structure` (president, vice-president,
-        treasurer, secretary).
+      summary: Retrieve collectivity by its ID.
       parameters:
         - in: path
           name: id
           schema:
             type: string
           required: true
-          description: Unique internal identifier of the collectivity.
       responses:
         200:
-          description: The collectivity matching the given identifier.
+          description: Collectivity retrieved
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collectivity'
         404:
-          description: Collectivity not found.
-        500:
-          description: Unexpected server error.
+          description: Collectivity not found
   '/collectivities/{id}/financialAccounts':
     get:
-      summary: Retrieve financial accounts of a collectivity
-      description: |
-        Returns the list of all financial accounts (cash, bank, mobile banking) belonging
-        to the collectivity. Each account includes its current balance.
-
-        If the optional query parameter `at` is provided (ISO-8601 date), balances are
-        recomputed as they stood at the end of that day:
-        `balance_at = current_balance − Σ IN after date + Σ OUT after date`
-
-        If `at` is omitted, the current balance is returned.
+      summary: Get collectivity financial accounts
       parameters:
         - in: path
           name: id
           schema:
             type: string
           required: true
-          description: Unique internal identifier of the collectivity.
         - in: query
           name: at
           schema:
             type: string
             format: date
-          required: false
-          description: |
-            Optional date (yyyy-MM-dd). When provided, account balances are returned
-            as they were at the end of this date.
       responses:
         200:
-          description: List of financial accounts with their balance (current or at the given date).
+          description: List of financial account of the collectivity
           content:
             application/json:
               schema:
@@ -102,9 +82,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/FinancialAccount'
         404:
-          description: Collectivity not found.
-        500:
-          description: Unexpected server error.
+          description: Collectivity not found
   '/collectivities/{id}/informations':
     put:
       summary: Attribute collectivity informations to specific collectivity
@@ -267,9 +245,238 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MemberPayment'
-
+  '/collectivites/{id}/statistics':
+    get:
+      summary: Get local statistics for a collectivity
+      description: |
+        Get statistics for a collectivity between a date interval.
+        Actually, statistics contain only earned amount from each member and potential unpaid amount.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          required: true
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          required: true
+      responses:
+        200:
+          description: Collectivity local statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectivityLocalStatistics'
+        400:
+          description: Mandatory query parameters not provided or malformed.
+        404:
+          description: Collectivity not found
+  '/collectivites/statistics':
+    get:
+      summary: Get collectivities overall statistics
+      description: |
+        Get collectivities global statistics between a date interval.
+        Actually, statistics contain only overall percentage of members who are current with their dues (membership fees) and number of new members.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          required: true
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          required: true
+      responses:
+        200:
+          description: Collectivity overall statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectivityOverallStatistics'
+  '/collectivities/{id}/activities':
+    get:
+      summary: Retrieve existing collectivity activities
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: List of collectivity activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectivityActivity'
+        400:
+          description: Mandatory query parameters not provided or malformed.
+        404:
+          description: Collectivity not found
+    post:
+      summary: Add activities to specific collectivity
+      description: |
+        Note that either executive date or recurrence rule can be provided at same time, not both.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateCollectivityActivity'
+      responses:
+        200:
+          description: List of added collectivity activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectivityActivity'
+        400:
+          description: Both recurrence rule and executive date provided, or provided data malformed inside payload.
+        404:
+          description: Collectivities not found
+  '/collectivities/{id}/activities/{activityId}/attendance':
+    post:
+      summary: Confirm members attendance to an existing collectivity activity
+      description: |
+        Note that a member attendance status (MISSING or ATTENDED) can not be updated once set.
+        Only, UNDEFINED status can be then updated.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateActivityMemberAttendance'
+      responses:
+        201:
+          description: List of activity member attendance created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityMemberAttendance'
+        400:
+          description: Either malformed provided data through request body or already confirmed attendance for any of provided member
+        404:
+          description: Either collectivity not found or activity not found
+    get:
+      summary: Get members attendance to an existing collectivity activity
+      description: |
+        Note that return attendance must include UNDEFINED, ATTENDED or MISSING members. 
+        UNDEFINED and MISSING status are only set for members of the collectivity, that are concerned by their occupation set for the activity.
+        For other members outside collectivity, they can only set ATTENDED status. Same for members inside collectivity, that are not concerned to be required to be present.
+      responses:
+        201:
+          description: List of activity member attendance including other members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityMemberAttendance'
+        404:
+          description: Either collectivity not found or activity not found
 components:
   schemas:
+    ActivityMemberAttendance:
+      type: object
+      properties:
+        id:
+          type: string
+        memberDescription:
+          $ref: '#/components/schemas/MemberDescription'
+        attendanceStatus:
+          $ref: '#/components/schemas/AttendanceStatus'
+    CreateActivityMemberAttendance:
+      type: object
+      properties:
+        memberIdentifier:
+          type: string
+        attendanceStatus:
+          $ref: '#/components/schemas/AttendanceStatus'
+    AttendanceStatus:
+      type: string
+      enum:
+        - MISSING
+        - ATTENDED
+        - UNDEFINED
+    MonthlyRecurrenceRule:
+      type: object
+      properties:
+        weekOrdinal:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: >
+            Week position in a month.
+            1 = 1st week, 2 = 2nd week, … 5 = 5th week (if exists).
+        dayOfWeek:
+          type: string
+          enum: [ MO, TU, WE, TH, FR, SA, SU ]
+          description: Day of week.
+      example:
+        weekOrdinal: 3
+        dayOfWeek: SA   # 3rd Saturday of each month
+    CreateCollectivityActivity:
+      type: object
+      properties:
+        label:
+          type: string
+        activityType:
+          type: string
+          enum:
+            - MEETING
+            - TRAINING
+            - OTHER
+        memberOccupationConcerned:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberOccupation'
+        recurrenceRule:
+          $ref: '#/components/schemas/MonthlyRecurrenceRule'
+        executiveDate:
+          type: string
+          format: date
+    CollectivityActivity:
+      allOf:
+        - $ref: '#/components/schemas/CreateCollectivityActivity'
+      properties:
+        id:
+          type: string
     CreateCollectivity:
       type: object
       properties:
@@ -328,6 +535,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Member'
+    CollectivityLocalStatistics:
+      type: object
+      properties:
+        memberDescription:
+          $ref: '#/components/schemas/MemberDescription'
+        earnedAmount:
+          type: number
+        unpaidAmount:
+          type: number
+    CollectivityOverallStatistics:
+      type: object
+      properties:
+        collectivityInformation:
+          $ref: '#/components/schemas/CollectivityInformation'
+        newMembersNumber:
+          type: integer
+        overallMemberCurrentDuePercentage:
+          type: number
     MemberIdentifier:
       type: string
     CreateMember:
@@ -345,6 +570,19 @@ components:
           type: boolean
         membershipDuesPaid:
           type: boolean
+    MemberDescription:
+      type: object
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        occupation:
+          type: string
     MemberInformation:
       type: object
       properties:

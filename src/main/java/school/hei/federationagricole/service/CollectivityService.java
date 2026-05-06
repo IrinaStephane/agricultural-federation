@@ -23,15 +23,14 @@ public class CollectivityService {
     private final CollectivityRepository repository;
     private final CollectivityValidator validator;
 
-    //  Feature A: create collectivities
-
+    // Feature A: create collectivities
     public List<CollectivityResponse> createCollectivities(List<CreateCollectivity> createCollectivities) {
         List<Collectivity> collectivitiesToSave = new ArrayList<>();
-        List<List<Integer>> memberIdsList      = new ArrayList<>();
-        List<Integer> presidentIds             = new ArrayList<>();
-        List<Integer> vicePresidentIds         = new ArrayList<>();
-        List<Integer> treasurerIds             = new ArrayList<>();
-        List<Integer> secretaryIds             = new ArrayList<>();
+        List<List<String>> memberIdsList        = new ArrayList<>();
+        List<String> presidentIds               = new ArrayList<>();
+        List<String> vicePresidentIds           = new ArrayList<>();
+        List<String> treasurerIds               = new ArrayList<>();
+        List<String> secretaryIds               = new ArrayList<>();
 
         for (CreateCollectivity request : createCollectivities) {
             validator.validateCollectivityCreation(request);
@@ -58,8 +57,8 @@ public class CollectivityService {
         return saved.stream().map(this::buildResponse).toList();
     }
 
-    //  Feature A complement: get collectivity by id
-    public CollectivityResponse getById(Integer id) {
+    // Feature A complement: get collectivity by id
+    public CollectivityResponse getById(String id) {
         Collectivity collectivity = repository.findById(id);
         if (collectivity == null) {
             throw new NotFoundException("Collectivity not found with id " + id);
@@ -67,10 +66,9 @@ public class CollectivityService {
         return buildResponse(collectivity);
     }
 
-    //  Feature J: attribute a unique number and name to a collectivity
-    public CollectivityResponse identifyCollectivity(Integer id,
+    // Feature J: attribute a unique number and name to a collectivity
+    public CollectivityResponse identifyCollectivity(String id,
                                                      CollectivityIdentificationRequest request) {
-
         // 1. Check collectivity exists
         Collectivity existing = repository.findById(id);
         if (existing == null) {
@@ -115,10 +113,9 @@ public class CollectivityService {
         return buildResponse(updated);
     }
 
-
     private CollectivityResponse buildResponse(Collectivity collectivity) {
         return CollectivityResponse.builder()
-                .id(String.valueOf(collectivity.getId()))
+                .id(collectivity.getId())   // ← plus besoin de String.valueOf()
                 .number(collectivity.getNumber())
                 .name(collectivity.getName())
                 .location(collectivity.getLocation())

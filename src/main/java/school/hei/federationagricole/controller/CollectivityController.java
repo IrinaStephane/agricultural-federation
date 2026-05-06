@@ -5,17 +5,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import school.hei.federationagricole.entity.dto.CollectivityIdentificationRequest;
-import school.hei.federationagricole.entity.dto.CollectivityResponse;
-import school.hei.federationagricole.entity.dto.CreateCollectivity;
-import school.hei.federationagricole.entity.dto.CreateMembershipFee;
+import school.hei.federationagricole.entity.dto.*;
 import school.hei.federationagricole.exception.BadRequestException;
 import school.hei.federationagricole.exception.CollectivityAlreadyIdentifiedException;
 import school.hei.federationagricole.exception.NotFoundException;
-import school.hei.federationagricole.service.CollectivityService;
-import school.hei.federationagricole.service.FinancialAccountService;
-import school.hei.federationagricole.service.MembershipFeeService;
-import school.hei.federationagricole.service.TransactionService;
+import school.hei.federationagricole.service.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,10 +19,12 @@ import java.util.List;
 @RequestMapping("/collectivities")
 public class CollectivityController {
 
-    private final CollectivityService    collectivityService;
-    private final MembershipFeeService   membershipFeeService;
-    private final TransactionService     transactionService;
+    private final CollectivityService     collectivityService;
+    private final MembershipFeeService    membershipFeeService;
+    private final TransactionService      transactionService;
     private final FinancialAccountService financialAccountService;
+    private final ActivityService         activityService;
+    private final StatisticsService       statisticsService;
 
     @PostMapping
     public ResponseEntity<?> createCollectivities(
@@ -51,7 +47,7 @@ public class CollectivityController {
 
     @PutMapping("/{id}/informations")
     public ResponseEntity<?> identifyCollectivity(
-            @PathVariable Integer id,
+            @PathVariable String id,
             @RequestBody(required = false) CollectivityIdentificationRequest request) {
         try {
             if (request == null) {
@@ -73,7 +69,7 @@ public class CollectivityController {
     }
 
     @GetMapping("/{id}/membershipFees")
-    public ResponseEntity<?> getMembershipFees(@PathVariable Integer id) {
+    public ResponseEntity<?> getMembershipFees(@PathVariable String id) {
         try {
             return ResponseEntity.ok(membershipFeeService.getByCollectivity(id));
         } catch (NotFoundException e) {
@@ -86,7 +82,7 @@ public class CollectivityController {
 
     @PostMapping("/{id}/membershipFees")
     public ResponseEntity<?> createMembershipFees(
-            @PathVariable Integer id,
+            @PathVariable String id,
             @RequestBody(required = false) List<CreateMembershipFee> body) {
         try {
             if (body == null || body.isEmpty()) {
@@ -105,7 +101,7 @@ public class CollectivityController {
 
     @GetMapping("/{id}/transactions")
     public ResponseEntity<?> getTransactions(
-            @PathVariable Integer id,
+            @PathVariable String id,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         try {
@@ -123,7 +119,7 @@ public class CollectivityController {
     // Feature D complement: GET /collectivities/{id}/financialAccounts
     @GetMapping("/{id}/financialAccounts")
     public ResponseEntity<?> getFinancialAccounts(
-            @PathVariable Integer id,
+            @PathVariable String id,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate at) {
         try {
             return ResponseEntity.ok(financialAccountService.getByCollectivity(id, at));
@@ -137,10 +133,81 @@ public class CollectivityController {
 
     // Feature A complement: GET /collectivities/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCollectivity(@PathVariable Integer id) {
+    public ResponseEntity<?> getCollectivity(@PathVariable String id) {
         try {
             CollectivityResponse response = collectivityService.getById(id);
             return ResponseEntity.ok(response);
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    // Feature E: GET /collectivities/{id}/activities
+    @GetMapping("/{id}/activities")
+    public ResponseEntity<?> getActivities(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(activityService.getActivities(id));
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    // Feature E: POST /collectivities/{id}/activities
+    @PostMapping("/{id}/activities")
+    public ResponseEntity<?> addActivities(
+            @PathVariable String id,
+            @RequestBody(required = false) List<CreateCollectivityActivity> body) {
+        try {
+            if (body == null || body.isEmpty()) {
+                return ResponseEntity.badRequest().body("Request body must be a non-empty array.");
+            }
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(activityService.addActivities(id, body));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    // Feature F: POST /collectivities/{id}/activities/{activityId}/attendance
+    @PostMapping("/{id}/activities/{activityId}/attendance")
+    public ResponseEntity<?> setAttendance(
+            @PathVariable String id,
+            @PathVariable String activityId,
+            @RequestBody(required = false) List<CreateActivityMemberAttendance> body) {
+        try {
+            if (body == null || body.isEmpty()) {
+                return ResponseEntity.badRequest().body("Request body must be a non-empty array.");
+            }
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(activityService.setAttendance(id, activityId, body));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    // Feature F: GET /collectivities/{id}/activities/{activityId}/attendance
+    @GetMapping("/{id}/activities/{activityId}/attendance")
+    public ResponseEntity<?> getAttendance(
+            @PathVariable String id,
+            @PathVariable String activityId) {
+        try {
+            return ResponseEntity.ok(activityService.getAttendance(id, activityId));
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {

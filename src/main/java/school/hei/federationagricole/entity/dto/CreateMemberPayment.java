@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class CreateMemberPayment {
     private BigDecimal amount;
-    private Integer membershipFeeIdentifier;
-    private Integer accountCreditedIdentifier;
+    private String membershipFeeIdentifier;
+    private String accountCreditedIdentifier;
     private PaymentMode paymentMode;
 }

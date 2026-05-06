@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CollectivityTransaction {
-    private Integer id;
+    private String id;
     private LocalDate creationDate;
     private BigDecimal amount;
     private PaymentMode paymentMode;

@@ -21,7 +21,7 @@ public class CollectivityRuleValidator {
                 continue;
             }
 
-            List<Integer> collectivityIds =
+            List<String> collectivityIds =
                     sponsor.getIdsOfActualBelongingCollectivities();
 
             if (collectivityIds.contains(dto.getCollectivityIdentifier())) {

@@ -15,8 +15,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MembershipFee {
-    private Integer id;
-    private Integer collectivityId;
+    private String id;
+    private String collectivityId;
     private String label;
     private Frequency frequency;
     private BigDecimal amount;

@@ -44,7 +44,7 @@ public class MemberController {
 
     @PostMapping("/{id}/payments")
     public ResponseEntity<?> createPayments(
-            @PathVariable Integer id,
+            @PathVariable String id,
             @RequestBody(required = false) List<CreateMemberPayment> body) {
         try {
             if (body == null || body.isEmpty()) {

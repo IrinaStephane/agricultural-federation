@@ -9,6 +9,7 @@ import school.hei.federationagricole.entity.enums.Frequency;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 @AllArgsConstructor
@@ -16,7 +17,7 @@ public class MembershipFeeRepository {
 
     private final Connection connection;
 
-    public List<MembershipFee> findByCollectivityId(Integer collectivityId) {
+    public List<MembershipFee> findByCollectivityId(String collectivityId) {
         String sql = """
             SELECT id, id_collectivity, label, frequency, amount, eligible_from, is_active
             FROM membership_fee
@@ -25,7 +26,7 @@ public class MembershipFeeRepository {
             """;
         List<MembershipFee> result = new ArrayList<>();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, collectivityId);
+            stmt.setString(1, collectivityId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) result.add(mapRow(rs));
             return result;
@@ -34,10 +35,10 @@ public class MembershipFeeRepository {
         }
     }
 
-    public MembershipFee findById(Integer id) {
+    public MembershipFee findById(String id) {
         String sql = "SELECT id, id_collectivity, label, frequency, amount, eligible_from, is_active FROM membership_fee WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
+            stmt.setString(1, id);
             ResultSet rs = stmt.executeQuery();
             return rs.next() ? mapRow(rs) : null;
         } catch (SQLException e) {
@@ -45,40 +46,41 @@ public class MembershipFeeRepository {
         }
     }
 
-    public boolean existsById(Integer id) {
+    public boolean existsById(String id) {
         String sql = "SELECT 1 FROM membership_fee WHERE id = ? LIMIT 1";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
+            stmt.setString(1, id);
             return stmt.executeQuery().next();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to check membership fee existence", e);
         }
     }
 
-    public List<MembershipFee> saveAll(Integer collectivityId, List<school.hei.federationagricole.entity.dto.CreateMembershipFee> dtos) {
+    public List<MembershipFee> saveAll(String collectivityId,
+                                       List<school.hei.federationagricole.entity.dto.CreateMembershipFee> dtos) {
         String sql = """
-            INSERT INTO membership_fee (id_collectivity, label, frequency, amount, eligible_from, is_active)
-            VALUES (?, ?, ?::cotisation_frequency, ?, ?, true)
-            RETURNING id
+            INSERT INTO membership_fee (id, id_collectivity, label, frequency, amount, eligible_from, is_active)
+            VALUES (?, ?, ?, ?::cotisation_frequency, ?, ?, true)
             """;
         List<MembershipFee> created = new ArrayList<>();
         try {
             connection.setAutoCommit(false);
             for (school.hei.federationagricole.entity.dto.CreateMembershipFee dto : dtos) {
+                // Générer un ID string unique pour la cotisation
+                String feeId = "cot-" + UUID.randomUUID().toString().substring(0, 8);
                 try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                    stmt.setInt(1, collectivityId);
-                    stmt.setString(2, dto.getLabel());
-                    stmt.setString(3, dto.getFrequency().name());
-                    stmt.setBigDecimal(4, dto.getAmount());
+                    stmt.setString(1, feeId);
+                    stmt.setString(2, collectivityId);
+                    stmt.setString(3, dto.getLabel());
+                    stmt.setString(4, dto.getFrequency().name());
+                    stmt.setBigDecimal(5, dto.getAmount());
                     if (dto.getEligibleFrom() != null) {
-                        stmt.setDate(5, java.sql.Date.valueOf(dto.getEligibleFrom()));
+                        stmt.setDate(6, java.sql.Date.valueOf(dto.getEligibleFrom()));
                     } else {
-                        stmt.setNull(5, java.sql.Types.DATE);
+                        stmt.setNull(6, java.sql.Types.DATE);
                     }
-                    ResultSet rs = stmt.executeQuery();
-                    if (rs.next()) {
-                        created.add(findById(rs.getInt("id")));
-                    }
+                    stmt.executeUpdate();
+                    created.add(findById(feeId));
                 }
             }
             connection.commit();
@@ -94,8 +96,8 @@ public class MembershipFeeRepository {
     private MembershipFee mapRow(ResultSet rs) throws SQLException {
         boolean active = rs.getBoolean("is_active");
         return MembershipFee.builder()
-                .id(rs.getInt("id"))
-                .collectivityId(rs.getInt("id_collectivity"))
+                .id(rs.getString("id"))
+                .collectivityId(rs.getString("id_collectivity"))
                 .label(rs.getString("label"))
                 .frequency(Frequency.valueOf(rs.getString("frequency")))
                 .amount(rs.getBigDecimal("amount"))
