@@ -14,7 +14,7 @@ import java.time.LocalDate;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/collectivites")
+@RequestMapping("/collectivities")
 public class StatisticsController {
 
     private final StatisticsService statisticsService;
