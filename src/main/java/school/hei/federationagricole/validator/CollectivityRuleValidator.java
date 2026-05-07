@@ -22,12 +22,12 @@ public class CollectivityRuleValidator {
                 continue;
             }
 
-            boolean isSenior = sponsor.getMemberCollectivities().stream()
+            boolean isConfirmed = sponsor.getMemberCollectivities().stream()
                     .filter(mc -> mc.getEndDate() == null)
-                    .anyMatch(mc -> mc.getOccupation() == CollectivityOccupation.SENIOR);
+                    .anyMatch(mc -> mc.getOccupation() != CollectivityOccupation.JUNIOR);
 
-            if (!isSenior) {
-                throw new InsufficientSponsorCount(sponsor.getId() + " is not a confirmed member (SENIOR)");
+            if (!isConfirmed) {
+                throw new InsufficientSponsorCount(sponsor.getId() + " is not a confirmed member");
             }
 
             List<String> collectivityIds =
