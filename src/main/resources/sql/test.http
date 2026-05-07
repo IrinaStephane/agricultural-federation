@@ -427,7 +427,7 @@ GET {{baseUrl}}/collectivities/col-1/activities/act-c1-ag1/attendance
 ###
 
 ### F-2 : Lister les présences de la formation col-1
-GET {{baseUrl}}/collectivities/col-1/activities/act-c1-tr1/attendance
+GET {{baseUrl}}/collectivities/col-1/activities/act-1/attendance
 
 ###
 

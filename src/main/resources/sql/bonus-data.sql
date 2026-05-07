@@ -1,14 +1,3 @@
--- =============================================================================
--- DONNÉES DE TEST — Bonus 1 & 2
--- Activités (Feature E) + Présences (Feature F)
--- Basé sur PROG3-TD-Final-Mai-2026-Données-de-test-BONUS.pdf
--- =============================================================================
--- IMPORTANT : activity_attendance a une contrainte UNIQUE(id_activity, id_member)
--- mais les données de présence couvrent PLUSIEURS séances (mars ET avril) pour
--- la même activité récurrente. On ajoute donc occurrence_date pour lever
--- l'ambiguïté et on adapte la contrainte unique en conséquence.
--- =============================================================================
-
 ALTER TABLE "public"."activity_attendance"
     ADD COLUMN IF NOT EXISTS "occurrence_date" date NOT NULL DEFAULT CURRENT_DATE;
 
@@ -84,20 +73,9 @@ VALUES
 ('act-6', 'TREASURER'),
 ('act-6', 'VICE_PRESIDENT'),
 ('act-6', 'PRESIDENT'),
-
--- act-7 : Formation de base col-3 → JUNIOR uniquement
 ('act-7', 'JUNIOR')
+ON CONFLICT (id_activity, occupation) DO NOTHING;
 
-    ON CONFLICT (id_activity, occupation) DO NOTHING;
-
--- =============================================================================
--- 3. PRÉSENCES
--- =============================================================================
--- Clé de déduplication : (id_activity, id_member, occurrence_date)
--- Format ID : att-{actId}-{memberId}-{YYYYMMDD}
--- =============================================================================
-
--- ── Collectivité 1 — act-1 (AG1) ──────────────────────────────────────────
 
 -- Séance du 07/03/2026
 INSERT INTO "public"."activity_attendance"
