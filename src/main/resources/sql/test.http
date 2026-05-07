@@ -113,8 +113,8 @@ Content-Type: application/json
     "email":                  "heritiana.rakoto@test.mg",
     "collectivityIdentifier": "col-1",
     "referees": [
-      { "memberId": "C1-M5", "relationship": "Ami" },
-      { "memberId": "C1-M6", "relationship": "Collègue" }
+      "C1-M5",
+      "C1-M6"
     ],
     "registrationFeePaid":  true,
     "membershipDuesPaid":   true
@@ -139,8 +139,8 @@ Content-Type: application/json
     "email":                  "volana.raso@test.mg",
     "collectivityIdentifier": "col-1",
     "referees": [
-      { "memberId": "C1-M5", "relationship": "Famille" },
-      { "memberId": "C1-M1", "relationship": "Voisin" }
+      "C1-M5",
+      "C1-M1"
     ],
     "registrationFeePaid":  true,
     "membershipDuesPaid":   true
@@ -165,8 +165,8 @@ Content-Type: application/json
     "email":                  "fidy.andria@test.mg",
     "collectivityIdentifier": "col-1",
     "referees": [
-      { "memberId": "C3-M1", "relationship": "Ami" },
-      { "memberId": "C3-M2", "relationship": "Ami" }
+      "C3-M1",
+      "C3-M2"
     ],
     "registrationFeePaid":  true,
     "membershipDuesPaid":   true
