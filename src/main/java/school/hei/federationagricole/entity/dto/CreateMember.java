@@ -29,7 +29,7 @@ public class CreateMember {
     private CollectivityOccupation occupation;
 
     private String collectivityIdentifier;
-    private List<String> referees;
+    private List<Referee> referees;
 
     private boolean registrationFeePaid;
     private boolean membershipDuesPaid;

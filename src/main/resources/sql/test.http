@@ -1,424 +1,542 @@
- ### ─────────────────────────────────────────────────────────────────────────
-### POST /members — cas normal (201)
-### Parrains 1 & 2 sont dans la collectivité 1 et ont > 90 jours d'ancienneté
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/members
-Content-Type: application/json
+@baseUrl = http://localhost:8080
 
-[
-  {
-    "firstName": "Tahiry",
-    "lastName": "Andriamanana",
-    "birthDate": "1998-03-15",
-    "gender": "MALE",
-    "address": "Lot 22 Ankadivato Antananarivo",
-    "profession": "Agriculteur",
-    "phoneNumber": "0341000020",
-    "email": "tahiry.andria@email.com",
-    "occupation": "JUNIOR",
-    "collectivityIdentifier": 1,
-    "referees": [1, 2],
-    "registrationFeePaid": true,
-    "membershipDuesPaid": true
-  }
-]
+### ============================================================
+### A — Collectivités
+### ============================================================
 
-###
-
-### ──────────────────────────────────────────────────────────────────────────
-### POST /members — erreur 400 : paiement incomplet
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/members
-Content-Type: application/json
-
-[
-  {
-    "firstName": "Faly",
-    "lastName": "Randriana",
-    "birthDate": "2001-07-10",
-    "gender": "FEMALE",
-    "address": "Antananarivo",
-    "profession": "Etudiante",
-    "phoneNumber": "0341000021",
-    "email": "faly.rand@email.com",
-    "occupation": "JUNIOR",
-    "collectivityIdentifier": 1,
-    "referees": [1, 2],
-    "registrationFeePaid": false,
-    "membershipDuesPaid": false
-  }
-]
-
-###
-
-### ──────────────────────────────────────────────────────────────────────────
-### POST /members — erreur 400 : 1 seul parrain au lieu de 2 minimum
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/members
-Content-Type: application/json
-
-[
-  {
-    "firstName": "Solo",
-    "lastName": "Rakoto",
-    "birthDate": "1999-01-01",
-    "gender": "MALE",
-    "address": "Antananarivo",
-    "profession": "Dev",
-    "phoneNumber": "0341000022",
-    "email": "solo.rkt@email.com",
-    "occupation": "JUNIOR",
-    "collectivityIdentifier": 1,
-    "referees": [1],
-    "registrationFeePaid": true,
-    "membershipDuesPaid": true
-  }
-]
-
-###
-
-###
-
-### ──────────────────────────────────────────────────────────────────────────
-### POST /collectivities — cas normal (201)
-### Membres 1-10 existent, 1-8 ont > 6 mois d'ancienneté
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/collectivities
+### A-1 : Créer une nouvelle collectivité
+POST {{baseUrl}}/collectivities
 Content-Type: application/json
 
 [
   {
     "location": "Fianarantsoa",
-    "memberIds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     "federationApproval": true,
+    "memberIds": ["C1-M1","C1-M2","C1-M3","C1-M4","C1-M5","C1-M6","C1-M7","C1-M8"],
     "structure": {
-      "presidentId": 1,
-      "vicePresidentId": 2,
-      "treasurerId": 3,
-      "secretaryId": 4
+      "presidentId":     "C1-M1",
+      "vicePresidentId": "C1-M2",
+      "treasurerId":     "C1-M4",
+      "secretaryId":     "C1-M3"
     }
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### POST /collectivities — erreur 400 : pas d'autorisation fédération
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/collectivities
+### A-2 : Créer sans approbation fédération → 400
+POST {{baseUrl}}/collectivities
 Content-Type: application/json
 
 [
   {
-    "location": "Toamasina",
-    "memberIds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "location": "Toliara",
     "federationApproval": false,
+    "memberIds": ["C1-M1","C1-M2"],
     "structure": {
-      "presidentId": 1,
-      "vicePresidentId": 2,
-      "treasurerId": 3,
-      "secretaryId": 4
+      "presidentId":     "C1-M1",
+      "vicePresidentId": "C1-M2",
+      "treasurerId":     "C1-M2",
+      "secretaryId":     "C1-M2"
     }
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### PUT /collectivities/1/informations — attribuer numéro + nom (201)
-### Collectivité 1 a number=NULL et name=NULL dans data.sql
-### ──────────────────────────────────────────────────────────────────────────
-PUT http://localhost:8080/collectivities/1/informations
+### A-3 : Récupérer une collectivité par son ID
+GET {{baseUrl}}/collectivities/col-1
+
+###
+
+### A-4 : Collectivité inexistante → 404
+GET {{baseUrl}}/collectivities/col-999
+
+###
+
+### ============================================================
+### J — Attribution numéro + nom
+### PUT /collectivities/{id}/informations
+### ============================================================
+
+### J-1 : Attribuer numéro et nom (collectivité sans identification)
+PUT {{baseUrl}}/collectivities/col-4/informations
 Content-Type: application/json
 
 {
-  "number": "COL-001",
-  "name": "Collectivite Antananarivo"
+  "number": "4",
+  "name": "Vokatra Tsara"
 }
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### PUT /collectivities/1/informations — erreur 409 : déjà identifiée (immutable)
-### ──────────────────────────────────────────────────────────────────────────
-PUT http://localhost:8080/collectivities/1/informations
+### J-2 : Modifier une collectivité déjà identifiée → 409
+PUT {{baseUrl}}/collectivities/col-1/informations
 Content-Type: application/json
 
 {
-  "number": "COL-999",
-  "name": "Nouveau Nom Interdit"
+  "number": "99",
+  "name": "Doublon"
 }
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### PUT /collectivities/3/informations — erreur 400 : nom déjà pris
-### "Collectivite Antsirabe" appartient à la collectivité 2
-### ──────────────────────────────────────────────────────────────────────────
-PUT http://localhost:8080/collectivities/3/informations
+### J-3 : Nom déjà utilisé par une autre collectivité → 400
+PUT {{baseUrl}}/collectivities/col-2/informations
 Content-Type: application/json
 
 {
-  "number": "COL-003",
-  "name": "Collectivite Antsirabe"
+  "number": "5",
+  "name": "Mpanorina"
 }
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### PUT /collectivities/999/informations — erreur 404 : collectivité inexistante
-### ──────────────────────────────────────────────────────────────────────────
-PUT http://localhost:8080/collectivities/999/informations
-Content-Type: application/json
+### ============================================================
+### B-2 — Admission d'un nouveau membre
+### POST /members
+### ============================================================
 
-{
-  "number": "COL-999",
-  "name": "Inexistante"
-}
-
-###
-
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1/membershipFees — lister les cotisations (200)
-### Cotisations id=1 et id=2 créées dans data.sql pour la collectivité 1
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/1/membershipFees
-
-###
-
-### ──────────────────────────────────────────────────────────────────────────
-### POST /collectivities/2/membershipFees — créer des cotisations (200)
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/collectivities/2/membershipFees
+### B-1 : Admission valide — 2 parrains de la même collectivité
+POST {{baseUrl}}/members
 Content-Type: application/json
 
 [
   {
-    "label": "Cotisation mensuelle Antsirabe 2026",
-    "frequency": "MONTHLY",
-    "amount": 15000.00,
+    "firstName":              "Heritiana",
+    "lastName":               "Rakoto",
+    "birthDate":              "2000-06-15",
+    "gender":                 "MALE",
+    "address":                "Lot 40 Ambatondrazaka",
+    "profession":             "Agriculteur",
+    "phoneNumber":            "0341111111",
+    "email":                  "heritiana.rakoto@test.mg",
+    "collectivityIdentifier": "col-1",
+    "referees": [
+      { "memberId": "C1-M5", "relationship": "Ami" },
+      { "memberId": "C1-M6", "relationship": "Collègue" }
+    ],
+    "registrationFeePaid":  true,
+    "membershipDuesPaid":   true
+  }
+]
+
+###
+
+### B-2 : 1 parrain col-1 + 1 parrain col-2 (≥ 50 % col-1 → autorisé)
+POST {{baseUrl}}/members
+Content-Type: application/json
+
+[
+  {
+    "firstName":              "Volana",
+    "lastName":               "Rasoamahenina",
+    "birthDate":              "1995-03-20",
+    "gender":                 "FEMALE",
+    "address":                "Lot 22 Ambatondrazaka",
+    "profession":             "Riziculteur",
+    "phoneNumber":            "0342222222",
+    "email":                  "volana.raso@test.mg",
+    "collectivityIdentifier": "col-1",
+    "referees": [
+      { "memberId": "C1-M5", "relationship": "Famille" },
+      { "memberId": "C1-M1", "relationship": "Voisin" }
+    ],
+    "registrationFeePaid":  true,
+    "membershipDuesPaid":   true
+  }
+]
+
+###
+
+### B-3 : 2 parrains hors col-1 → refusé → 400
+POST {{baseUrl}}/members
+Content-Type: application/json
+
+[
+  {
+    "firstName":              "Fidy",
+    "lastName":               "Andriamanantena",
+    "birthDate":              "1998-11-11",
+    "gender":                 "MALE",
+    "address":                "Lot 5 Antsirabe",
+    "profession":             "Collecteur",
+    "phoneNumber":            "0343333333",
+    "email":                  "fidy.andria@test.mg",
+    "collectivityIdentifier": "col-1",
+    "referees": [
+      { "memberId": "C3-M1", "relationship": "Ami" },
+      { "memberId": "C3-M2", "relationship": "Ami" }
+    ],
+    "registrationFeePaid":  true,
+    "membershipDuesPaid":   true
+  }
+]
+
+###
+
+### B-4 : Frais non réglés → 400
+POST {{baseUrl}}/members
+Content-Type: application/json
+
+[
+  {
+    "firstName":              "Tojo",
+    "lastName":               "Raharison",
+    "birthDate":              "2001-01-01",
+    "gender":                 "MALE",
+    "address":                "Lot 99 Ambato",
+    "profession":             "Technicien",
+    "phoneNumber":            "0344444444",
+    "email":                  "tojo.raharison@test.mg",
+    "collectivityIdentifier": "col-1",
+    "referees": [
+      { "memberId": "C1-M5", "relationship": "Ami" },
+      { "memberId": "C1-M6", "relationship": "Ami" }
+    ],
+    "registrationFeePaid":  false,
+    "membershipDuesPaid":   false
+  }
+]
+
+###
+
+### ============================================================
+### C — Cotisations
+### ============================================================
+
+### C-1 : Lister les cotisations de col-1
+GET {{baseUrl}}/collectivities/col-1/membershipFees
+
+###
+
+### C-2 : Lister les cotisations de col-3
+GET {{baseUrl}}/collectivities/col-3/membershipFees
+
+###
+
+### C-3 : Créer cotisation mensuelle + ponctuelle pour col-1
+POST {{baseUrl}}/collectivities/col-1/membershipFees
+Content-Type: application/json
+
+[
+  {
+    "label":        "Cotisation mensuelle 2026",
+    "frequency":    "MONTHLY",
+    "amount":       10000.00,
     "eligibleFrom": "2026-01-01"
   },
   {
-    "label": "Cotisation annuelle Antsirabe 2026",
-    "frequency": "ANNUALLY",
-    "amount": 150000.00,
-    "eligibleFrom": "2026-01-01"
+    "label":        "Cotisation fête de récolte",
+    "frequency":    "PUNCTUALLY",
+    "amount":       25000.00,
+    "eligibleFrom": "2026-05-01"
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### POST /collectivities/1/membershipFees — erreur 400 : montant ≤ 0
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/collectivities/1/membershipFees
+### C-4 : Collectivité inexistante → 404
+GET {{baseUrl}}/collectivities/col-999/membershipFees
+
+###
+
+### ============================================================
+### C — Paiements membres
+### POST /members/{id}/payments
+### ============================================================
+
+### C-5 : Paiement espèces pour C1-M7
+POST {{baseUrl}}/members/C1-M7/payments
 Content-Type: application/json
 
 [
   {
-    "label": "Cotisation invalide",
-    "frequency": "MONTHLY",
-    "amount": -500
+    "amount":                    40000.00,
+    "paymentMode":               "CASH",
+    "accountCreditedIdentifier": "C1-A-CASH",
+    "membershipFeeIdentifier":   "cot-1"
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### POST /collectivities/1/membershipFees — erreur 400 : fréquence manquante
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/collectivities/1/membershipFees
+### C-6 : Paiement mobile money pour C1-M8
+POST {{baseUrl}}/members/C1-M8/payments
 Content-Type: application/json
 
 [
   {
-    "label": "Manque fréquence",
-    "amount": 10000
+    "amount":                    10000.00,
+    "paymentMode":               "MOBILE_BANKING",
+    "accountCreditedIdentifier": "C1-A-MOBILE-1",
+    "membershipFeeIdentifier":   "cot-1"
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/999/membershipFees — erreur 404 : collectivité inexistante
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/999/membershipFees
-
-###
-
-### ──────────────────────────────────────────────────────────────────────────
-### POST /members/1/payments — paiement CASH (201)
-### Membre 1, cotisation mensuelle id=1, compte caisse id=1
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/members/1/payments
+### C-7 : Membre inexistant → 404
+POST {{baseUrl}}/members/mbr-XXXXX/payments
 Content-Type: application/json
 
 [
   {
-    "amount": 10000.00,
-    "membershipFeeIdentifier": 1,
-    "accountCreditedIdentifier": 1,
-    "paymentMode": "CASH"
+    "amount":                    50000.00,
+    "paymentMode":               "CASH",
+    "accountCreditedIdentifier": "C1-A-CASH"
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### POST /members/2/payments — paiements multiples en une requête (201)
-### Mobile money + cash pour deux cotisations différentes
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/members/2/payments
+### C-8 : Montant négatif → 400
+POST {{baseUrl}}/members/C1-M1/payments
 Content-Type: application/json
 
 [
   {
-    "amount": 10000.00,
-    "membershipFeeIdentifier": 1,
-    "accountCreditedIdentifier": 2,
-    "paymentMode": "MOBILE_BANKING"
+    "amount":                    -500.00,
+    "paymentMode":               "CASH",
+    "accountCreditedIdentifier": "C1-A-CASH"
+  }
+]
+
+###
+
+### ============================================================
+### D — Comptes financiers et transactions
+### ============================================================
+
+### D-1 : Transactions col-1 sur toute l'année 2026
+GET {{baseUrl}}/collectivities/col-1/transactions?from=2026-01-01&to=2026-12-31
+
+###
+
+### D-2 : Transactions col-2 sur janvier 2026
+GET {{baseUrl}}/collectivities/col-2/transactions?from=2026-01-01&to=2026-01-31
+
+###
+
+### D-3 : Transactions col-3 sur 2025 (aucune attendue)
+GET {{baseUrl}}/collectivities/col-3/transactions?from=2025-01-01&to=2025-12-31
+
+###
+
+### D-4 : Solde des comptes col-1 aujourd'hui
+GET {{baseUrl}}/collectivities/col-1/financialAccounts
+
+###
+
+### D-5 : Solde des comptes col-1 avant les transactions 2026
+GET {{baseUrl}}/collectivities/col-1/financialAccounts?at=2025-12-31
+
+###
+
+### D-6 : Solde des comptes col-2 au 01/01/2026
+GET {{baseUrl}}/collectivities/col-2/financialAccounts?at=2026-01-01
+
+###
+
+### D-7 : Collectivité inexistante → 404
+GET {{baseUrl}}/collectivities/col-999/financialAccounts
+
+###
+
+### ============================================================
+### E — Activités (Bonus 1)
+### POST & GET /collectivities/{id}/activities
+### ============================================================
+
+### E-1 : Lister les activités de col-1
+GET {{baseUrl}}/collectivities/col-1/activities
+
+###
+
+### E-2 : Lister les activités de col-3
+GET {{baseUrl}}/collectivities/col-3/activities
+
+###
+
+### E-3 : Ajouter une AG ponctuelle + une formation récurrente à col-1
+POST {{baseUrl}}/collectivities/col-1/activities
+Content-Type: application/json
+
+[
+  {
+    "label":                     "AG extraordinaire – Juin 2026",
+    "activityType":              "MEETING",
+    "memberOccupationConcerned": [],
+    "executiveDate":             "2026-06-10"
   },
   {
-    "amount": 100000.00,
-    "membershipFeeIdentifier": 2,
-    "accountCreditedIdentifier": 1,
-    "paymentMode": "CASH"
+    "label":                     "Formation mensuelle junior – 4ème samedi",
+    "activityType":              "TRAINING",
+    "memberOccupationConcerned": ["JUNIOR"],
+    "recurrenceWeekOrdinal":     4,
+    "recurrenceDayOfWeek":       "SA"
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### POST /members/1/payments — erreur 400 : montant négatif
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/members/1/payments
+### E-4 : Ajouter une activité à col-2
+POST {{baseUrl}}/collectivities/col-2/activities
 Content-Type: application/json
 
 [
   {
-    "amount": -1000,
-    "membershipFeeIdentifier": 1,
-    "accountCreditedIdentifier": 1,
-    "paymentMode": "CASH"
+    "label":                     "Réunion bilan semestriel",
+    "activityType":              "MEETING",
+    "memberOccupationConcerned": [],
+    "executiveDate":             "2026-06-30"
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### POST /members/999/payments — erreur 404 : membre inexistant
-### ──────────────────────────────────────────────────────────────────────────
-POST http://localhost:8080/members/999/payments
+### E-5 : recurrenceRule ET executiveDate fournis ensemble → 400
+POST {{baseUrl}}/collectivities/col-1/activities
 Content-Type: application/json
 
 [
   {
-    "amount": 10000,
-    "membershipFeeIdentifier": 1,
-    "accountCreditedIdentifier": 1,
-    "paymentMode": "CASH"
+    "label":                 "Activité invalide",
+    "activityType":          "OTHER",
+    "executiveDate":         "2026-07-01",
+    "recurrenceWeekOrdinal": 1,
+    "recurrenceDayOfWeek":   "MO"
   }
 ]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1/transactions — transactions de l'année 2026 (200) ✅
-### Après les paiements ci-dessus, ils apparaissent dans cette liste
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/1/transactions?from=2026-01-01&to=2026-12-31
+### E-6 : Collectivité inexistante → 404
+GET {{baseUrl}}/collectivities/col-999/activities
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1/transactions — erreur 400 : from > to
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/1/transactions?from=2026-12-31&to=2026-01-01
+### ============================================================
+### F — Présences (Bonus 1)
+### POST & GET /collectivities/{id}/activities/{activityId}/attendance
+### ============================================================
+
+### F-1 : Lister les présences de l'AG col-1 (déjà en BDD)
+GET {{baseUrl}}/collectivities/col-1/activities/act-c1-ag1/attendance
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/999/transactions — erreur 404 : collectivité inexistante
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/999/transactions?from=2026-01-01&to=2026-12-31
+### F-2 : Lister les présences de la formation col-1
+GET {{baseUrl}}/collectivities/col-1/activities/act-c1-tr1/attendance
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1 — collectivité existante (200)
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/1
+### F-3 : Marquer les présences sur l'AG col-2
+POST {{baseUrl}}/collectivities/col-2/activities/act-c2-ag1/attendance
+Content-Type: application/json
+
+[
+  { "memberIdentifier": "C1-M1", "attendanceStatus": "ATTENDED" },
+  { "memberIdentifier": "C1-M2", "attendanceStatus": "ATTENDED" },
+  { "memberIdentifier": "C1-M3", "attendanceStatus": "MISSING"  },
+  { "memberIdentifier": "C1-M4", "attendanceStatus": "ATTENDED" },
+  { "memberIdentifier": "C1-M5", "attendanceStatus": "ATTENDED" },
+  { "memberIdentifier": "C1-M6", "attendanceStatus": "MISSING"  },
+  { "memberIdentifier": "C1-M7", "attendanceStatus": "ATTENDED" },
+  { "memberIdentifier": "C1-M8", "attendanceStatus": "ATTENDED" }
+]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/2 — collectivité identifiée (200)
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/2
+### F-4 : Tenter de modifier une présence déjà confirmée → valeur inchangée
+POST {{baseUrl}}/collectivities/col-1/activities/act-c1-ag1/attendance
+Content-Type: application/json
+
+[
+  { "memberIdentifier": "C1-M7", "attendanceStatus": "ATTENDED" }
+]
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/999 — erreur 404 : collectivité inexistante
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/999
+### F-5 : Ajouter un membre externe (col-3) à une activité col-1
+POST {{baseUrl}}/collectivities/col-1/activities/act-c1-tr1/attendance
+Content-Type: application/json
+
+[
+  { "memberIdentifier": "C3-M5", "attendanceStatus": "ATTENDED" }
+]
 
 ###
 
-
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1/financialAccounts — soldes courants (200)
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/1/financialAccounts
+### F-6 : Activité inexistante → 404
+GET {{baseUrl}}/collectivities/col-1/activities/act-XXXX/attendance
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1/financialAccounts?at=2026-01-14 — solde avant le 15 jan (200)
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/1/financialAccounts?at=2026-01-14
+### F-7 : Activité d'une autre collectivité → 404
+GET {{baseUrl}}/collectivities/col-1/activities/act-c2-ag1/attendance
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1/financialAccounts?at=2026-01-31 — solde fin janvier (200)
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/1/financialAccounts?at=2026-01-31
+### ============================================================
+### G — Statistiques locales par collectivité
+### GET /collectivities/{id}/statistics
+### ============================================================
+
+### G-1 : Stats col-1 sur toute l'année 2026
+### earnedAmount, unpaidAmount + attendanceRate (Bonus 2) par membre
+GET {{baseUrl}}/collectivities/col-1/statistics?from=2026-01-01&to=2026-12-31
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/1/financialAccounts?at=2099-12-31 — date future (200)
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/1/financialAccounts?at=2099-12-31
+### G-2 : Stats col-2 sur toute l'année 2026
+GET {{baseUrl}}/collectivities/col-2/statistics?from=2026-01-01&to=2026-12-31
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/2/financialAccounts — collectivité 2 sans transactions (200)
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/2/financialAccounts
+### G-3 : Stats col-3 — earnedAmount=0, unpaidAmount=50000 (cotisation cot-3)
+GET {{baseUrl}}/collectivities/col-3/statistics?from=2026-01-01&to=2026-12-31
 
 ###
 
-### ──────────────────────────────────────────────────────────────────────────
-### GET /collectivities/999/financialAccounts — erreur 404 : collectivité inexistante
-### ──────────────────────────────────────────────────────────────────────────
-GET http://localhost:8080/collectivities/999/financialAccounts
+### G-4 : Stats col-1 sur période partielle (janvier uniquement)
+GET {{baseUrl}}/collectivities/col-1/statistics?from=2026-01-01&to=2026-01-31
 
 ###
-### Stats locales collectivité 1
-GET http://localhost:8080/collectivites/col-1/statistics?from=2026-01-01&to=2026-04-30
-Accept: application/json
 
-### Stats globales toutes collectivités
-GET http://localhost:8080/collectivites/statistics?from=2026-01-01&to=2026-04-30
-Accept: application/json
+### G-5 : Paramètre "to" manquant → 400
+GET {{baseUrl}}/collectivities/col-1/statistics?from=2026-01-01
 
 ###
-### bonus
-GET http://localhost:8080/collectivites/col-1/activities
+
+### G-6 : Collectivité inexistante → 404
+GET {{baseUrl}}/collectivities/col-999/statistics?from=2026-01-01&to=2026-12-31
 
 ###
-GET http://localhost:8080/collectivites/col-1/activities/act-c1-ag1/attendance
+
+### ============================================================
+### H — Statistiques globales fédération
+### GET /collectivities/statistics
+### ============================================================
+
+### H-1 : Stats globales toute l'année 2026
+### newMembersNumber, overallMemberCurrentDuePercentage,
+### overallAttendanceRate (Bonus 2) par collectivité
+GET {{baseUrl}}/collectivities/statistics?from=2026-01-01&to=2026-12-31
+
+###
+
+### H-2 : Stats globales premier semestre 2026
+GET {{baseUrl}}/collectivities/statistics?from=2026-01-01&to=2026-06-30
+
+###
+
+### H-3 : Stats globales sur 2025 (aucun nouveau membre attendu)
+GET {{baseUrl}}/collectivities/statistics?from=2025-01-01&to=2025-12-31
+
+###
+
+### H-4 : Paramètre "to" manquant → 400
+GET {{baseUrl}}/collectivities/statistics?from=2026-01-01
+
+###
