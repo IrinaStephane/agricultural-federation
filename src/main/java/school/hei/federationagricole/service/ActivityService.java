@@ -93,6 +93,7 @@ public class ActivityService {
                 .firstName(att.getMember().getFirstName())
                 .lastName(att.getMember().getLastName())
                 .email(att.getMember().getEmail())
+                .occupation(att.getOccupation() != null ? att.getOccupation().name() : null)
                 .build();
         return ActivityMemberAttendanceResponse.builder()
                 .id(att.getId())

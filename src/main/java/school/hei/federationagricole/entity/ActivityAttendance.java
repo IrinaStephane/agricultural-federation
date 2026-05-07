@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import school.hei.federationagricole.entity.enums.AttendanceStatus;
+import school.hei.federationagricole.entity.enums.CollectivityOccupation;
 import java.time.LocalDate;
 
 @Data
@@ -17,4 +18,5 @@ public class ActivityAttendance {
     private Member member;
     private AttendanceStatus attendanceStatus;
     private LocalDate occurrenceDate;
+    private CollectivityOccupation occupation;
 }

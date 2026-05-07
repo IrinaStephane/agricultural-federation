@@ -130,9 +130,15 @@ public class ActivityRepository {
         String sql = """
             SELECT aa.id, aa.id_activity, aa.attendance_status, aa.occurrence_date,
                    m.id AS m_id, m.first_name, m.last_name, m.birth_date, m.enrolment_date,
-                   m.address, m.email, m.phone_number, m.profession, m.gender
+                   m.address, m.email, m.phone_number, m.profession, m.gender,
+                   mc.occupation
             FROM activity_attendance aa
             JOIN member m ON aa.id_member = m.id
+            JOIN collectivity_activity ca ON aa.id_activity = ca.id
+            LEFT JOIN member_collectivity mc
+                   ON mc.id_member = m.id
+                  AND mc.id_collectivity = ca.id_collectivity
+                  AND mc.end_date IS NULL
             WHERE aa.id_activity = ?
             ORDER BY aa.occurrence_date, aa.id
             """;
@@ -147,6 +153,7 @@ public class ActivityRepository {
                         .attendanceStatus(AttendanceStatus.valueOf(rs.getString("attendance_status")))
                         .member(mapMember(rs))
                         .occurrenceDate(rs.getDate("occurrence_date").toLocalDate())
+                        .occupation(rs.getString("occupation") != null ? CollectivityOccupation.valueOf(rs.getString("occupation")) : null)
                         .build());
             }
             return result;
