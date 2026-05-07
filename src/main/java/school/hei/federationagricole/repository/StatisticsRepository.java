@@ -138,9 +138,11 @@ public class StatisticsRepository {
      */
     public Map<String, Integer> getNewMemberCountByCollectivity(LocalDate from, LocalDate to) {
         String sql = """
-                SELECT mc.id_collectivity, COUNT(DISTINCT mc.id_member) AS cnt
+                SELECT mc.id_collectivity, COUNT(DISTINCT m.id) AS cnt
                 FROM member_collectivity mc
-                WHERE DATE(mc.start_date) BETWEEN ? AND ?
+                JOIN member m ON mc.id_member = m.id
+                WHERE DATE(m.enrolment_date) BETWEEN ? AND ?
+                AND mc.occupation = 'JUNIOR'
                 GROUP BY mc.id_collectivity
                 """;
         Map<String, Integer> result = new HashMap<>();
