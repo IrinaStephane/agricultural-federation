@@ -18,13 +18,13 @@ public class StatisticsRepository {
     public Map<String, BigDecimal> getEarnedAmountByMember(String collectivityId,
                                                            LocalDate from, LocalDate to) {
         String sql = """
-            SELECT t.id_member, COALESCE(SUM(t.amount), 0) AS earned
-            FROM transaction t
-            WHERE t.id_collectivity = ?
-              AND DATE(t.transaction_date) BETWEEN ? AND ?
-              AND t.transaction_type = 'IN'
-            GROUP BY t.id_member
-            """;
+                SELECT t.id_member, COALESCE(SUM(t.amount), 0) AS earned
+                FROM transaction t
+                WHERE t.id_collectivity = ?
+                  AND DATE(t.transaction_date) BETWEEN ? AND ?
+                  AND t.transaction_type = 'IN'
+                GROUP BY t.id_member
+                """;
         Map<String, BigDecimal> result = new HashMap<>();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, collectivityId);
@@ -47,68 +47,66 @@ public class StatisticsRepository {
      */
     public Map<String, BigDecimal> getUnpaidAmountByMember(String collectivityId,
                                                            LocalDate from, LocalDate to) {
-        // Step 1: get all active membership fees for the collectivity
         String feesSql = """
-            SELECT id, frequency, amount, eligible_from
-            FROM membership_fee
-            WHERE id_collectivity = ? AND is_active = true
-            """;
-        // Step 2: for each member + fee, compute expected - paid
-        String membersSql = """
-            SELECT DISTINCT mc.id_member
-            FROM member_collectivity mc
-            WHERE mc.id_collectivity = ? AND mc.end_date IS NULL
-            """;
-        String paidSql = """
-            SELECT COALESCE(SUM(t.amount), 0) AS paid
-            FROM transaction t
-            WHERE t.id_member = ? AND t.id_membership_fee = ?
-              AND DATE(t.transaction_date) BETWEEN ? AND ?
-              AND t.transaction_type = 'IN'
-            """;
+                SELECT frequency, amount, eligible_from
+                FROM membership_fee
+                WHERE id_collectivity = ? AND is_active = true
+                """;
 
-        Map<String, BigDecimal> unpaidByMember = new HashMap<>();
+        String membersSql = """
+                SELECT DISTINCT id_member FROM member_collectivity
+                WHERE id_collectivity = ? AND end_date IS NULL
+                """;
+
+        String totalPaidSql = """
+                SELECT id_member, COALESCE(SUM(amount), 0) AS paid
+                FROM transaction
+                WHERE id_collectivity = ?
+                  AND DATE(transaction_date) BETWEEN ? AND ?
+                  AND transaction_type = 'IN'
+                GROUP BY id_member
+                """;
+
         try {
+            BigDecimal totalExpected = BigDecimal.ZERO;
+            try (PreparedStatement stmt = connection.prepareStatement(feesSql)) {
+                stmt.setString(1, collectivityId);
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    String freq = rs.getString("frequency");
+                    BigDecimal amt = rs.getBigDecimal("amount");
+                    java.sql.Date ef = rs.getDate("eligible_from");
+                    LocalDate eligibleFrom = ef != null ? ef.toLocalDate() : from;
+                    totalExpected = totalExpected.add(computeExpected(freq, amt, eligibleFrom, from, to));
+                }
+            }
+
             List<String> memberIds = new ArrayList<>();
             try (PreparedStatement stmt = connection.prepareStatement(membersSql)) {
                 stmt.setString(1, collectivityId);
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) memberIds.add(rs.getString("id_member"));
             }
-            for (String memberId : memberIds) unpaidByMember.put(memberId, BigDecimal.ZERO);
 
-            try (PreparedStatement stmt = connection.prepareStatement(feesSql)) {
+            Map<String, BigDecimal> paidByMember = new HashMap<>();
+            try (PreparedStatement stmt = connection.prepareStatement(totalPaidSql)) {
                 stmt.setString(1, collectivityId);
-                ResultSet feeRs = stmt.executeQuery();
-                while (feeRs.next()) {
-                    String feeId = feeRs.getString("id");
-                    String frequency = feeRs.getString("frequency");
-                    BigDecimal amount = feeRs.getBigDecimal("amount");
-                    Date eligibleFromDate = feeRs.getDate("eligible_from");
-                    LocalDate eligibleFrom = eligibleFromDate != null
-                            ? eligibleFromDate.toLocalDate() : from;
-
-                    for (String memberId : memberIds) {
-                        BigDecimal expected = computeExpected(frequency, amount, eligibleFrom, from, to);
-                        if (expected.compareTo(BigDecimal.ZERO) == 0) continue;
-
-                        BigDecimal paid;
-                        try (PreparedStatement ps = connection.prepareStatement(paidSql)) {
-                            ps.setString(1, memberId);
-                            ps.setString(2, feeId);
-                            ps.setDate(3, Date.valueOf(from));
-                            ps.setDate(4, Date.valueOf(to));
-                            ResultSet rs = ps.executeQuery();
-                            paid = rs.next() ? rs.getBigDecimal("paid") : BigDecimal.ZERO;
-                        }
-                        BigDecimal unpaid = expected.subtract(paid);
-                        if (unpaid.compareTo(BigDecimal.ZERO) > 0) {
-                            unpaidByMember.merge(memberId, unpaid, BigDecimal::add);
-                        }
-                    }
+                stmt.setDate(2, Date.valueOf(from));
+                stmt.setDate(3, Date.valueOf(to));
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    paidByMember.put(rs.getString("id_member"), rs.getBigDecimal("paid"));
                 }
             }
-            return unpaidByMember;
+
+            Map<String, BigDecimal> result = new HashMap<>();
+            for (String memberId : memberIds) {
+                BigDecimal paid = paidByMember.getOrDefault(memberId, BigDecimal.ZERO);
+                BigDecimal unpaid = totalExpected.subtract(paid);
+                result.put(memberId, unpaid.max(BigDecimal.ZERO));
+            }
+            return result;
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to compute unpaid amounts", e);
         }
@@ -140,12 +138,11 @@ public class StatisticsRepository {
      */
     public Map<String, Integer> getNewMemberCountByCollectivity(LocalDate from, LocalDate to) {
         String sql = """
-            SELECT mc.id_collectivity, COUNT(DISTINCT mc.id_member) AS cnt
-            FROM member_collectivity mc
-            JOIN member m ON mc.id_member = m.id
-            WHERE DATE(m.enrolment_date) BETWEEN ? AND ?
-            GROUP BY mc.id_collectivity
-            """;
+                SELECT mc.id_collectivity, COUNT(DISTINCT mc.id_member) AS cnt
+                FROM member_collectivity mc
+                WHERE DATE(mc.start_date) BETWEEN ? AND ?
+                GROUP BY mc.id_collectivity
+                """;
         Map<String, Integer> result = new HashMap<>();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(from));
@@ -226,11 +223,11 @@ public class StatisticsRepository {
      */
     public Map<String, Object[]> findMembersInfoByCollectivity(String collectivityId) {
         String sql = """
-            SELECT m.id, m.first_name, m.last_name, m.email, mc.occupation
-            FROM member_collectivity mc
-            JOIN member m ON mc.id_member = m.id
-            WHERE mc.id_collectivity = ? AND mc.end_date IS NULL
-            """;
+                SELECT m.id, m.first_name, m.last_name, m.email, mc.occupation
+                FROM member_collectivity mc
+                JOIN member m ON mc.id_member = m.id
+                WHERE mc.id_collectivity = ? AND mc.end_date IS NULL
+                """;
         Map<String, Object[]> result = new LinkedHashMap<>();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, collectivityId);

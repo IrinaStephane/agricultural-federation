@@ -3,6 +3,7 @@ package school.hei.federationagricole.validator;
 import org.springframework.stereotype.Component;
 import school.hei.federationagricole.entity.Member;
 import school.hei.federationagricole.entity.dto.CreateMember;
+import school.hei.federationagricole.entity.enums.CollectivityOccupation;
 import school.hei.federationagricole.exception.InsufficientSponsorCount;
 
 import java.util.List;
@@ -19,6 +20,14 @@ public class CollectivityRuleValidator {
 
             if (!dto.getReferees().contains(sponsor.getId())) {
                 continue;
+            }
+
+            boolean isSenior = sponsor.getMemberCollectivities().stream()
+                    .filter(mc -> mc.getEndDate() == null)
+                    .anyMatch(mc -> mc.getOccupation() == CollectivityOccupation.SENIOR);
+
+            if (!isSenior) {
+                throw new InsufficientSponsorCount(sponsor.getId() + " is not a confirmed member (SENIOR)");
             }
 
             List<String> collectivityIds =

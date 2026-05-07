@@ -9,6 +9,7 @@ import school.hei.federationagricole.repository.MemberRepository;
 import school.hei.federationagricole.validator.CollectivityRuleValidator;
 import school.hei.federationagricole.validator.PaymentValidator;
 import school.hei.federationagricole.validator.SponsorCountValidator;
+import school.hei.federationagricole.validator.SponsorTenureValidator;
 
 import java.util.*;
 import java.util.stream.IntStream;
@@ -21,6 +22,7 @@ public class MemberService {
     private final PaymentValidator paymentValidator;
     private final CollectivityRuleValidator collectivityRuleValidator;
     private final SponsorCountValidator sponsorCountValidator;
+    private final SponsorTenureValidator sponsorTenureValidator;
 
     public List<MemberResponse> createMembers(List<CreateMember> memberList) {
 
@@ -33,6 +35,7 @@ public class MemberService {
                 .toList();
 
         List<Member> sponsors = repository.findByIds(sponsorIds);
+        sponsors.forEach(sponsorTenureValidator::validate);
 
         memberList.forEach(m ->
                 collectivityRuleValidator.validate(m, sponsors)
