@@ -14,6 +14,7 @@ import school.hei.federationagricole.entity.enums.Gender;
 import school.hei.federationagricole.entity.enums.WeekDay;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.*;
 
 @Repository
@@ -127,13 +128,13 @@ public class ActivityRepository {
 
     public List<ActivityAttendance> findAttendanceByActivityId(String activityId) {
         String sql = """
-            SELECT aa.id, aa.id_activity, aa.attendance_status,
+            SELECT aa.id, aa.id_activity, aa.attendance_status, aa.occurrence_date,
                    m.id AS m_id, m.first_name, m.last_name, m.birth_date, m.enrolment_date,
                    m.address, m.email, m.phone_number, m.profession, m.gender
             FROM activity_attendance aa
             JOIN member m ON aa.id_member = m.id
             WHERE aa.id_activity = ?
-            ORDER BY aa.id
+            ORDER BY aa.occurrence_date, aa.id
             """;
         List<ActivityAttendance> result = new ArrayList<>();
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -145,6 +146,7 @@ public class ActivityRepository {
                         .activityId(rs.getString("id_activity"))
                         .attendanceStatus(AttendanceStatus.valueOf(rs.getString("attendance_status")))
                         .member(mapMember(rs))
+                        .occurrenceDate(rs.getDate("occurrence_date").toLocalDate())
                         .build());
             }
             return result;
@@ -160,9 +162,9 @@ public class ActivityRepository {
     public List<ActivityAttendance> saveAttendance(String activityId,
                                                    List<CreateActivityMemberAttendance> dtos) {
         String upsertSql = """
-            INSERT INTO activity_attendance (id, id_activity, id_member, attendance_status)
-            VALUES (?, ?, ?, ?::attendance_status)
-            ON CONFLICT (id_activity, id_member) DO UPDATE
+            INSERT INTO activity_attendance (id, id_activity, id_member, attendance_status, occurrence_date)
+            VALUES (?, ?, ?, ?::attendance_status, ?)
+            ON CONFLICT (id_activity, id_member, occurrence_date) DO UPDATE
               SET attendance_status = EXCLUDED.attendance_status
               WHERE activity_attendance.attendance_status = 'UNDEFINED'
             """;
@@ -172,10 +174,12 @@ public class ActivityRepository {
             for (CreateActivityMemberAttendance dto : dtos) {
                 String attId = "att-" + UUID.randomUUID().toString().substring(0, 8);
                 try (PreparedStatement stmt = connection.prepareStatement(upsertSql)) {
+                    LocalDate occDate = dto.getOccurrenceDate() != null ? dto.getOccurrenceDate() : LocalDate.now();
                     stmt.setString(1, attId);
                     stmt.setString(2, activityId);
                     stmt.setString(3, dto.getMemberIdentifier());
                     stmt.setString(4, dto.getAttendanceStatus().name());
+                    stmt.setDate(5, java.sql.Date.valueOf(occDate));
                     stmt.executeUpdate();
                 }
             }
@@ -196,12 +200,13 @@ public class ActivityRepository {
 
     public ActivityAttendance findAttendanceByActivityAndMember(String activityId, String memberId) {
         String sql = """
-            SELECT aa.id, aa.id_activity, aa.attendance_status,
+            SELECT aa.id, aa.id_activity, aa.attendance_status,aa.occurrence_date,
                    m.id AS m_id, m.first_name, m.last_name, m.birth_date, m.enrolment_date,
                    m.address, m.email, m.phone_number, m.profession, m.gender
             FROM activity_attendance aa
             JOIN member m ON aa.id_member = m.id
             WHERE aa.id_activity = ? AND aa.id_member = ?
+            ORDER BY aa.occurrence_date, aa.id
             """;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, activityId);
@@ -212,6 +217,7 @@ public class ActivityRepository {
                     .id(rs.getString("id"))
                     .activityId(rs.getString("id_activity"))
                     .attendanceStatus(AttendanceStatus.valueOf(rs.getString("attendance_status")))
+                    .occurrenceDate(rs.getDate("occurrence_date").toLocalDate())
                     .member(mapMember(rs))
                     .build();
         } catch (SQLException e) {

@@ -98,6 +98,7 @@ public class ActivityService {
                 .id(att.getId())
                 .memberDescription(desc)
                 .attendanceStatus(att.getAttendanceStatus())
+                .occurrenceDate(att.getOccurrenceDate())
                 .build();
     }
 }

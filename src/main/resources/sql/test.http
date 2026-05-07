@@ -46,6 +46,7 @@ Content-Type: application/json
 
 ### A-3 : Récupérer une collectivité par son ID
 GET {{baseUrl}}/collectivities/col-1
+x-api-key: agri-secure-key
 
 ###
 
@@ -423,11 +424,13 @@ GET {{baseUrl}}/collectivities/col-999/activities
 
 ### F-1 : Lister les présences de l'AG col-1 (déjà en BDD)
 GET {{baseUrl}}/collectivities/col-1/activities/act-c1-ag1/attendance
+x-api-key: agri-secure-key
 
 ###
 
 ### F-2 : Lister les présences de la formation col-1
 GET {{baseUrl}}/collectivities/col-1/activities/act-1/attendance
+x-api-key: agri-secure-key
 
 ###
 
